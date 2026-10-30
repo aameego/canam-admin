@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Nunito", sans-serif;
+  --color-navy: #062b57;
+  --color-canam-red: #c90000;
+  --color-canvas: #f2f4f6;
+  --color-ink: #222222;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+}
+
+.chip-scroller {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chip-scroller::-webkit-scrollbar {
+  display: none;
+}
