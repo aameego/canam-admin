@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { categoriesApi, productsApi, type ProductWrite } from '../api/products.ts';
+import { categoriesApi, productsApi, type CategoryWrite, type ProductWrite } from '../api/products.ts';
 import { uploadApi } from '../api/upload.ts';
 import { adminQueryKeys } from '../lib/queryKeys.ts';
 import type { ListParams, ProductStatus } from '../types/api.ts';
@@ -52,14 +52,6 @@ export const useUploadProductImage = () =>
     mutationFn: (file: File) => uploadApi.productImage(file),
   });
 
-export const useDuplicateProduct = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => productsApi.duplicate(id),
-    onSuccess: () => invalidateCatalog(queryClient),
-  });
-};
-
 export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -82,7 +74,7 @@ export const useCategories = () =>
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name: string; code?: string; slug?: string; isActive?: boolean }) =>
+    mutationFn: (body: CategoryWrite) =>
       categoriesApi.create(body),
     onSuccess: () => invalidateCatalog(queryClient),
   });
@@ -96,7 +88,7 @@ export const useUpdateCategory = () => {
       body,
     }: {
       id: string;
-      body: Partial<{ name: string; code: string; slug: string; isActive: boolean }>;
+      body: CategoryWrite;
     }) => categoriesApi.update(id, body),
     onSuccess: () => invalidateCatalog(queryClient),
   });

@@ -22,6 +22,7 @@ export const authApi = {
   refresh: () => client.post('/auth/refresh-token'),
   forgotPassword: (email: string) =>
     client.post<{ message: string }>('/auth/forgot-password', { email }),
+  checkResetLink: (token: string) => client.post<{ valid: true }>('/auth/reset-password/check', { token }),
   resetPassword: (token: string, password: string) =>
     client.post<{ message: string }>('/auth/reset-password', { token, password }),
 };

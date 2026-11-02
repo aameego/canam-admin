@@ -10,33 +10,33 @@ export const ADMIN_SIDEBAR_MIN_WIDTH = 1024;
  */
 export const ADMIN_TABLE_MIN_WIDTH = 1280;
 
-export type AdminCustomerCounts = {
-  all: number;
-  approved: number;
-  pending: number;
-  rejected: number;
+export type AdminCustomerCounts = Record<AccountStatus | 'all', number>;
+
+type SectionTitles = { list: string; detail?: string; create?: string; edit?: string };
+
+/** Mirrors the routes in App.tsx: /section, /section/new, /section/:id, /section/:id/edit. */
+const SECTION_TITLES: Record<string, SectionTitles> = {
+  customers: { list: 'Customers', detail: 'Customer Details', create: 'Add customer', edit: 'Edit customer' },
+  products: { list: 'Products', detail: 'Product details', create: 'Add product', edit: 'Edit product' },
+  categories: { list: 'Categories' },
+  orders: { list: 'Orders', detail: 'Order details' },
+  coupons: { list: 'Coupons', detail: 'Coupon details', create: 'Add coupon', edit: 'Edit coupon' },
 };
 
+const NOT_FOUND_TITLE = 'Page not found';
+
 export const adminPageTitle = (pathname: string, search = ''): string => {
-  if (pathname.startsWith('/customers')) {
-    if (pathname.includes('/new')) return 'Add customer';
-    if (pathname.endsWith('/edit')) return 'Edit customer';
-    if (pathname !== '/customers') return 'Customer Details';
-    if (new URLSearchParams(search).get('status') === 'pending') return 'Pending Approvals';
-    return 'Customers';
+  if (pathname === routes.root) return 'Dashboard';
+  const [section, id, action, ...rest] = pathname.split('/').filter(Boolean);
+  const titles = section ? SECTION_TITLES[section] : undefined;
+  if (!titles || rest.length) return NOT_FOUND_TITLE;
+  if (!id) {
+    if (section === 'customers' && new URLSearchParams(search).get('status') === 'pending') return 'Pending Approvals';
+    return titles.list;
   }
-  if (pathname.startsWith('/products')) {
-    if (pathname.includes('/new')) return 'Add product';
-    if (pathname.endsWith('/edit')) return 'Edit product';
-    if (pathname !== '/products') return 'Product details';
-    return 'Products';
-  }
-  if (pathname.startsWith('/categories')) return 'Categories';
-  if (pathname.startsWith('/orders')) return 'Orders';
-  if (pathname.startsWith('/coupons')) return 'Coupons';
-  if (pathname.startsWith('/content')) return 'Content';
-  if (pathname.startsWith('/reports')) return 'Reports';
-  return 'Dashboard';
+  if (id === 'new') return (!action && titles.create) || NOT_FOUND_TITLE;
+  if (!action) return titles.detail ?? NOT_FOUND_TITLE;
+  return (action === 'edit' && titles.edit) || NOT_FOUND_TITLE;
 };
 
 export const adminUsesPersistentSidebar = (viewportWidth: number) => viewportWidth >= ADMIN_SIDEBAR_MIN_WIDTH;
@@ -66,24 +66,30 @@ export const ADMIN_NAV_ITEMS = [
   { to: routes.products, label: 'Products', end: false },
   { to: routes.orders, label: 'Orders', end: false },
   { to: routes.coupons, label: 'Coupons', end: false },
-  { to: '/content', label: 'Content', end: false },
-  { to: '/reports', label: 'Reports', end: false },
 ] as const;
 
-export const COMING_NEXT_COPY = 'This screen is not built yet.';
-
-export const PLACEHOLDER_SCREENS = [
-  { path: routes.orders, name: 'Orders' },
-  { path: routes.coupons, name: 'Coupons' },
-  { path: '/content', name: 'Content' },
-  { path: '/reports', name: 'Reports' },
-] as const;
+export const dashboardKpis = (input: {
+  orders: number;
+  pendingApprovals: number;
+  revenue: number;
+  outOfStock: number;
+}) => [
+  { label: 'Total orders', value: input.orders, href: routes.orders, kind: 'count' as const },
+  {
+    label: 'Pending approvals',
+    value: input.pendingApprovals,
+    href: customerStatusHref('pending'),
+    kind: 'count' as const,
+  },
+  { label: 'Revenue', value: input.revenue, href: routes.orders, kind: 'money' as const },
+  { label: 'Out of stock', value: input.outOfStock, href: routes.products, kind: 'count' as const },
+];
 
 export const dashboardCustomerStats = (counts: AdminCustomerCounts) => [
   { label: 'Total customers', value: counts.all, href: customerStatusHref('all') },
   { label: 'Pending approvals', value: counts.pending, href: customerStatusHref('pending') },
   { label: 'Approved', value: counts.approved, href: customerStatusHref('approved') },
-  { label: 'Blocked', value: counts.rejected, href: customerStatusHref('rejected') },
+  { label: 'Blocked', value: counts.blocked, href: customerStatusHref('blocked') },
 ];
 
 const ADMIN_CLICKABLE =

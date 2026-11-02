@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { CATALOG_PATHS, GUEST_PATHS, routes } from '../routes.ts';
-import { ADMIN_NAV_ITEMS, PLACEHOLDER_SCREENS, adminPageTitle } from './adminChrome.ts';
+import { ADMIN_NAV_ITEMS, adminPageTitle } from './adminChrome.ts';
 
 describe('admin routes', () => {
   it('builds guest, catalog, customer, and coming-next paths', () => {
@@ -14,26 +14,23 @@ describe('admin routes', () => {
     assert.equal(routes.order('o1'), '/orders/o1');
     assert.equal(routes.coupon('c1'), '/coupons/c1');
     assert.equal(routes.couponNew, '/coupons/new');
+    assert.equal(routes.couponEdit('c1'), '/coupons/c1/edit');
   });
 
-  it('lists every sidebar destination and placeholder screen', () => {
+  it('only lists sidebar destinations that are built', () => {
     assert.deepEqual(
       ADMIN_NAV_ITEMS.map((item) => item.label),
-      ['Dashboard', 'Customers', 'Products', 'Orders', 'Coupons', 'Content', 'Reports'],
+      ['Dashboard', 'Customers', 'Products', 'Orders', 'Coupons'],
     );
     assert.equal(ADMIN_NAV_ITEMS[0]?.end, true);
-    assert.deepEqual(
-      PLACEHOLDER_SCREENS.map((screen) => [screen.path, screen.name]),
-      [
-        ['/orders', 'Orders'],
-        ['/coupons', 'Coupons'],
-        ['/content', 'Content'],
-        ['/reports', 'Reports'],
-      ],
-    );
     assert.equal(adminPageTitle('/orders'), 'Orders');
     assert.equal(adminPageTitle('/coupons'), 'Coupons');
-    assert.equal(adminPageTitle('/content'), 'Content');
-    assert.equal(adminPageTitle('/reports'), 'Reports');
+  });
+
+  it('titles unknown addresses as page not found instead of the dashboard', () => {
+    assert.equal(adminPageTitle('/'), 'Dashboard');
+    assert.equal(adminPageTitle('/xyz-not-exist'), 'Page not found');
+    assert.equal(adminPageTitle('/content'), 'Page not found');
+    assert.equal(adminPageTitle('/reports'), 'Page not found');
   });
 });

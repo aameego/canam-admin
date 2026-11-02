@@ -2,11 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
 import Pagination from '../components/Pagination.tsx';
+import CustomerStatusMenu from '../components/CustomerStatusMenu.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { IconDownload, IconEye, IconMore, IconPencil, IconSearch } from '../components/icons.tsx';
 import { useCustomers, useExportCustomers, useUpdateCustomerStatus } from '../hooks/useCustomers.ts';
 import { adminCardActionClass, adminFilterChipClass, adminIconBtnClass } from '../lib/adminChrome.ts';
-import { CUSTOMER_STATUS_FILTERS, downloadBlob } from '../lib/customers.ts';
+import {
+  CUSTOMER_STATUS_FILTERS,
+  downloadBlob,
+  parseCustomerStatusAction,
+  type CustomerStatusAction,
+} from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import {
   applyListFilter,
@@ -51,7 +57,7 @@ export default function CustomersPage() {
   const updateStatus = useUpdateCustomerStatus();
   const exporter = useExportCustomers();
   const data = query.data;
-  const counts = data?.counts ?? { all: 0, approved: 0, pending: 0, rejected: 0 };
+  const counts = data?.counts ?? { all: 0, approved: 0, pending: 0, rejected: 0, blocked: 0 };
   const isPendingView = status === 'pending';
 
   const setFilter = (nextStatus: AccountStatus | 'all') => {
@@ -63,11 +69,16 @@ export default function CustomersPage() {
     scrollAdminContentToTop();
   };
 
-  const onStatus = async (id: string, accountStatus: AccountStatus) => {
+  const onStatus = async (id: string, accountStatus: string) => {
     setError('');
+    const parsed = parseCustomerStatusAction(accountStatus);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     setMenuId('');
     try {
-      await updateStatus.mutateAsync({ id, accountStatus });
+      await updateStatus.mutateAsync({ id, accountStatus: parsed.accountStatus });
     } catch (err) {
       setError(getErrorMessage(err, 'Could not update this customer.'));
     }
@@ -198,8 +209,8 @@ export default function CustomersPage() {
               row={row}
               menuOpen={menuId === row.id}
               onToggleMenu={() => setMenuId((id) => (id === row.id ? '' : row.id))}
-              onApprove={() => void onStatus(row.id, 'approved')}
-              onReject={() => void onStatus(row.id, 'rejected')}
+              busy={updateStatus.isPending}
+              onStatus={(next) => void onStatus(row.id, next)}
             />
           )
         )}
@@ -235,8 +246,8 @@ export default function CustomersPage() {
               row={row}
               menuOpen={menuId === row.id}
               onToggleMenu={() => setMenuId((id) => (id === row.id ? '' : row.id))}
-              onApprove={() => void onStatus(row.id, 'approved')}
-              onReject={() => void onStatus(row.id, 'rejected')}
+              busy={updateStatus.isPending}
+              onStatus={(next) => void onStatus(row.id, next)}
             />
           )
         )}
@@ -263,14 +274,14 @@ function CustomerCard({
   row,
   menuOpen,
   onToggleMenu,
-  onApprove,
-  onReject,
+  busy,
+  onStatus,
 }: {
   row: CustomerListItem;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  onApprove: () => void;
-  onReject: () => void;
+  busy: boolean;
+  onStatus: (next: CustomerStatusAction['next']) => void;
 }) {
   return (
     <article className="min-w-0 rounded-lg border border-line bg-white p-4">
@@ -306,26 +317,7 @@ function CustomerCard({
         </button>
         </div>
         {menuOpen && (
-          <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-md border border-line bg-white py-1 shadow-sm">
-            {row.accountStatus !== 'approved' && (
-              <button
-                type="button"
-                className="w-full cursor-pointer px-3 py-2 text-left font-display text-[13px] font-bold text-navy hover:bg-canvas"
-                onClick={onApprove}
-              >
-                Approve
-              </button>
-            )}
-            {row.accountStatus !== 'rejected' && (
-              <button
-                type="button"
-                className="w-full cursor-pointer px-3 py-2 text-left font-display text-[13px] font-bold text-canam-red hover:bg-canvas"
-                onClick={onReject}
-              >
-                Block account
-              </button>
-            )}
-          </div>
+          <CustomerStatusMenu status={row.accountStatus} positionClass="top-full mt-1" busy={busy} onChange={onStatus} />
         )}
       </div>
     </article>
@@ -364,14 +356,14 @@ function CustomerRow({
   row,
   menuOpen,
   onToggleMenu,
-  onApprove,
-  onReject,
+  busy,
+  onStatus,
 }: {
   row: CustomerListItem;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  onApprove: () => void;
-  onReject: () => void;
+  busy: boolean;
+  onStatus: (next: CustomerStatusAction['next']) => void;
 }) {
   return (
     <div className="flex items-center gap-3 border-t border-line px-4 py-3">
@@ -395,26 +387,7 @@ function CustomerRow({
           <IconMore />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-9 z-10 w-40 rounded-md border border-line bg-white py-1 shadow-sm">
-            {row.accountStatus !== 'approved' && (
-              <button
-                type="button"
-                className="w-full cursor-pointer px-3 py-2 text-left font-display text-[13px] font-bold text-navy hover:bg-canvas"
-                onClick={onApprove}
-              >
-                Approve
-              </button>
-            )}
-            {row.accountStatus !== 'rejected' && (
-              <button
-                type="button"
-                className="w-full cursor-pointer px-3 py-2 text-left font-display text-[13px] font-bold text-canam-red hover:bg-canvas"
-                onClick={onReject}
-              >
-                Block account
-              </button>
-            )}
-          </div>
+          <CustomerStatusMenu status={row.accountStatus} positionClass="top-10" busy={busy} onChange={onStatus} />
         )}
       </div>
     </div>

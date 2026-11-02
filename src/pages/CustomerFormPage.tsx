@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
 import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../hooks/useCustomers.ts';
 import { BUSINESS_TYPES, customerToForm, EMPTY_CUSTOMER_FORM, validateCustomerForm } from '../lib/customers.ts';
+import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, PHONE_MAX_LENGTH } from '../lib/fields.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { routes } from '../routes.ts';
 
@@ -80,25 +81,25 @@ export default function CustomerFormPage() {
           <label className={labelClass} htmlFor="businessName">
             Business name
           </label>
-          <input id="businessName" className={fieldClass} value={form.businessName} onChange={onChange('businessName')} required />
+          <input id="businessName" className={fieldClass} value={form.businessName} onChange={onChange('businessName')} required maxLength={NAME_MAX} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="contactName">
             Contact name
           </label>
-          <input id="contactName" className={fieldClass} value={form.contactName} onChange={onChange('contactName')} required />
+          <input id="contactName" className={fieldClass} value={form.contactName} onChange={onChange('contactName')} required maxLength={NAME_MAX} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="email">
             Email
           </label>
-          <input id="email" type="email" className={fieldClass} value={form.email} onChange={onChange('email')} required />
+          <input id="email" type="email" className={fieldClass} value={form.email} onChange={onChange('email')} required maxLength={EMAIL_MAX} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="phone">
             Phone
           </label>
-          <input id="phone" className={fieldClass} value={form.phone} onChange={onChange('phone')} required />
+          <input id="phone" className={fieldClass} value={form.phone} onChange={onChange('phone')} required maxLength={PHONE_MAX_LENGTH} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="businessType">
@@ -124,6 +125,7 @@ export default function CustomerFormPage() {
             value={form.password}
             onChange={onChange('password')}
             required={!isEdit}
+            maxLength={PASSWORD_MAX}
             autoComplete={isEdit ? 'new-password' : 'new-password'}
           />
         </div>

@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
-import StatusBadge from '../components/StatusBadge.tsx';
+import StatusBadge, { OrderStatusBadge } from '../components/StatusBadge.tsx';
 import { useCustomer, useUpdateCustomerStatus } from '../hooks/useCustomers.ts';
-import { CUSTOMER_DETAIL_TABS, money, statusLabel } from '../lib/customers.ts';
+import {
+  CUSTOMER_DETAIL_TABS,
+  customerStatusActions,
+  money,
+  parseCustomerStatusAction,
+  statusLabel,
+  type CustomerStatusAction,
+} from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { routes } from '../routes.ts';
 
@@ -16,15 +23,20 @@ export default function CustomerDetailPage() {
   const updateStatus = useUpdateCustomerStatus();
   const [tab, setTab] = useState<Tab>('orders');
   const [error, setError] = useState('');
-  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [confirming, setConfirming] = useState<CustomerStatusAction | null>(null);
   const customer = query.data;
 
-  const changeStatus = async (accountStatus: 'approved' | 'rejected') => {
+  const changeStatus = async (accountStatus: string) => {
     if (!id) return;
     setError('');
+    const parsed = parseCustomerStatusAction(accountStatus);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     try {
-      await updateStatus.mutateAsync({ id, accountStatus });
-      setConfirmBlock(false);
+      await updateStatus.mutateAsync({ id, accountStatus: parsed.accountStatus });
+      setConfirming(null);
       await query.refetch();
     } catch (err) {
       setError(getErrorMessage(err, 'Could not update this account.'));
@@ -82,56 +94,44 @@ export default function CustomerDetailPage() {
             >
               Edit Customer
             </Link>
-            {customer.accountStatus === 'rejected' ? (
+            {customerStatusActions(customer.accountStatus).map((action) => (
               <button
+                key={action.next}
                 type="button"
-                className="h-11 rounded-[6px] border border-[#10b981] px-4 font-display text-[13px] font-bold text-[#10b981] disabled:opacity-70"
-                onClick={() => void changeStatus('approved')}
+                className={
+                  action.tone === 'danger'
+                    ? 'h-11 cursor-pointer rounded-[6px] border border-canam-red px-4 font-display text-[13px] font-bold text-canam-red disabled:cursor-not-allowed disabled:opacity-70'
+                    : 'h-11 cursor-pointer rounded-[6px] bg-[#10b981] px-4 font-display text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-70'
+                }
+                onClick={() => (action.confirm ? setConfirming(action) : void changeStatus(action.next))}
                 disabled={updateStatus.isPending}
               >
-                <BusyLabel pending={updateStatus.isPending} pendingLabel="Approving…" idle="Approve account" />
+                <BusyLabel
+                  pending={updateStatus.isPending && !action.confirm}
+                  pendingLabel="Saving…"
+                  idle={action.label}
+                />
               </button>
-            ) : (
-              <button
-                type="button"
-                className="h-11 rounded-[6px] border border-canam-red px-4 font-display text-[13px] font-bold text-canam-red"
-                onClick={() => setConfirmBlock(true)}
-                disabled={updateStatus.isPending}
-              >
-                Block Account
-              </button>
-            )}
-            {customer.accountStatus === 'pending' && (
-              <button
-                type="button"
-                className="h-11 rounded-[6px] bg-[#10b981] px-4 font-display text-[13px] font-bold text-white disabled:opacity-70 sm:col-span-2 lg:col-span-1"
-                onClick={() => void changeStatus('approved')}
-                disabled={updateStatus.isPending}
-              >
-                <BusyLabel pending={updateStatus.isPending} pendingLabel="Approving…" idle="Approve" />
-              </button>
-            )}
+            ))}
           </div>
         </div>
 
-        {confirmBlock && (
-          <div className="mt-4 rounded-[6px] border border-canam-red/30 bg-[#fef2f2] p-4">
-            <p className="font-body text-[14px] text-ink">
-              Block this account? They will not be able to sign in to the wholesale store.
-            </p>
+        {confirming && (
+          <div className="mt-4 rounded-[6px] border border-canam-red/30 bg-[#fef2f2] p-4" role="alertdialog">
+            <p className="font-body text-[14px] text-ink">{confirming.confirm}</p>
             <div className="mt-3 flex gap-2">
               <button
                 type="button"
-                className="rounded-[6px] bg-canam-red px-3 py-1.5 font-display text-[13px] font-bold text-white disabled:opacity-70"
-                onClick={() => void changeStatus('rejected')}
+                className="cursor-pointer rounded-[6px] bg-canam-red px-3 py-1.5 font-display text-[13px] font-bold text-white disabled:opacity-70"
+                onClick={() => void changeStatus(confirming.next)}
                 disabled={updateStatus.isPending}
               >
-                <BusyLabel pending={updateStatus.isPending} pendingLabel="Blocking…" idle="Block account" />
+                <BusyLabel pending={updateStatus.isPending} pendingLabel="Saving…" idle={confirming.label} />
               </button>
               <button
                 type="button"
-                className="rounded-[6px] px-3 py-1.5 font-display text-[13px] font-bold text-navy"
-                onClick={() => setConfirmBlock(false)}
+                className="cursor-pointer rounded-[6px] px-3 py-1.5 font-display text-[13px] font-bold text-navy"
+                onClick={() => setConfirming(null)}
               >
                 Cancel
               </button>
@@ -206,8 +206,11 @@ export default function CustomerDetailPage() {
               )}
               <div className="grid gap-3 p-4 md:hidden">
                 {customer.orders.items.map((order) => (
-                  <article key={order.id} className="rounded-[6px] border border-line p-3">
-                    <p className="font-display text-[14px] font-bold text-navy">{order.orderNumber}</p>
+                  <Link key={order.id} to={routes.order(order.id)} className="rounded-[6px] border border-line p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-display text-[14px] font-bold text-navy">{order.orderNumber}</p>
+                      <OrderStatusBadge status={order.status || 'pending'} />
+                    </div>
                     <p className="mt-1 font-body text-[13px] text-muted">{order.createdLabel}</p>
                     <div className="mt-2 flex items-center justify-between font-body text-[14px]">
                       <span>
@@ -215,7 +218,7 @@ export default function CustomerDetailPage() {
                       </span>
                       <span className="font-display text-[13px] font-bold">{money(order.total)}</span>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
               <div className="hidden md:block">
@@ -223,10 +226,15 @@ export default function CustomerDetailPage() {
                   <p className="min-w-0 flex-1">Order #</p>
                   <p className="w-[140px] shrink-0">Date</p>
                   <p className="w-[100px] shrink-0">Items</p>
+                  <p className="w-[120px] shrink-0">Status</p>
                   <p className="w-[120px] shrink-0 text-right">Total</p>
                 </div>
                 {customer.orders.items.map((order) => (
-                  <div key={order.id} className="flex items-center border-t border-line px-4 py-3">
+                  <Link
+                    key={order.id}
+                    to={routes.order(order.id)}
+                    className="flex items-center border-t border-line px-4 py-3 hover:bg-canvas/60"
+                  >
                     <p className="min-w-0 flex-1 truncate font-display text-[14px] font-bold text-navy">
                       {order.orderNumber}
                     </p>
@@ -234,10 +242,13 @@ export default function CustomerDetailPage() {
                     <p className="w-[100px] shrink-0 font-body text-[14px]">
                       {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
                     </p>
+                    <div className="w-[120px] shrink-0">
+                      <OrderStatusBadge status={order.status || 'pending'} />
+                    </div>
                     <p className="w-[120px] shrink-0 text-right font-display text-[13px] font-bold">
                       {money(order.total)}
                     </p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

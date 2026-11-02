@@ -10,7 +10,7 @@ describe('getErrorMessage', () => {
     );
     assert.equal(
       getErrorMessage({ response: { data: { error: '  Missing category  ' } } }, 'Could not save.'),
-      '  Missing category  ',
+      'Missing category',
     );
     assert.equal(
       getErrorMessage({ message: 'Network Error' }, 'Could not save.'),
@@ -20,5 +20,11 @@ describe('getErrorMessage', () => {
     assert.equal(getErrorMessage({ message: 'Request failed with status code 500' }, 'Could not save.'), 'Request failed with status code 500');
     assert.equal(getErrorMessage(null, 'Could not save.'), 'Could not save.');
     assert.equal(getErrorMessage({}, 'Could not save.'), 'Could not save.');
+    assert.equal(getErrorMessage({ response: { data: { message: '   ' } } }, 'Could not save.'), 'Could not save.');
+    assert.equal(getErrorMessage('boom', 'Could not save.'), 'Could not save.');
+    assert.equal(
+      getErrorMessage({ message: '  Request failed with status code 400  ' }, 'Could not save.'),
+      'Request failed with status code 400',
+    );
   });
 });

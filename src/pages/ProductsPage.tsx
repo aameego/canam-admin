@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
 import Pagination from '../components/Pagination.tsx';
 import { ProductStatusBadge } from '../components/StatusBadge.tsx';
@@ -7,7 +7,6 @@ import { IconCopy, IconDownload, IconEye, IconPencil, IconSearch, IconSpinner, I
 import {
   useCategories,
   useDeleteProduct,
-  useDuplicateProduct,
   useExportProducts,
   useProducts,
 } from '../hooks/useProducts.ts';
@@ -21,7 +20,6 @@ import { routes } from '../routes.ts';
 import type { Product } from '../types/api.ts';
 
 export default function ProductsPage() {
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const status = parseProductStatusFilter(params.get('status'));
   const page = parsePageParam(params.get('page'));
@@ -29,7 +27,7 @@ export default function ProductsPage() {
   const categoryId = params.get('categoryId') || '';
   const [search, setSearch] = useState(qParam);
   const [error, setError] = useState('');
-  const [busyRow, setBusyRow] = useState<{ id: string; action: 'duplicate' | 'delete' } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     setSearch(qParam);
@@ -51,7 +49,6 @@ export default function ProductsPage() {
   });
   const categories = useCategories();
   const exporter = useExportProducts();
-  const duplicate = useDuplicateProduct();
   const remove = useDeleteProduct();
   const data = query.data;
   const counts = data?.counts ?? { all: 0, active: 0, inactive: 0, draft: 0 };
@@ -82,29 +79,16 @@ export default function ProductsPage() {
     }
   };
 
-  const onDuplicate = async (id: string) => {
-    setError('');
-    setBusyRow({ id, action: 'duplicate' });
-    try {
-      const res = await duplicate.mutateAsync(id);
-      navigate(routes.productEdit(res.data.item.id));
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not duplicate this product.'));
-    } finally {
-      setBusyRow(null);
-    }
-  };
-
   const onDelete = async (row: Product) => {
     if (!window.confirm(`Delete ${row.title}? This cannot be undone.`)) return;
     setError('');
-    setBusyRow({ id: row.id, action: 'delete' });
+    setDeletingId(row.id);
     try {
       await remove.mutateAsync(row.id);
     } catch (err) {
       setError(getErrorMessage(err, 'Could not delete this product.'));
     } finally {
-      setBusyRow(null);
+      setDeletingId(null);
     }
   };
 
@@ -229,26 +213,17 @@ export default function ProductsPage() {
               <Link to={routes.productEdit(row.id)} className={adminCardActionClass()}>
                 Edit
               </Link>
-              <button
-                type="button"
-                className={adminCardActionClass()}
-                disabled={busyRow?.id === row.id}
-                onClick={() => void onDuplicate(row.id)}
-              >
-                <BusyLabel
-                  pending={busyRow?.id === row.id && busyRow.action === 'duplicate'}
-                  pendingLabel="Duplicating…"
-                  idle="Duplicate"
-                />
-              </button>
+              <Link to={routes.productDuplicate(row.id)} className={adminCardActionClass()}>
+                Duplicate
+              </Link>
               <button
                 type="button"
                 className={adminCardActionClass('danger')}
-                disabled={busyRow?.id === row.id}
+                disabled={deletingId === row.id}
                 onClick={() => void onDelete(row)}
               >
                 <BusyLabel
-                  pending={busyRow?.id === row.id && busyRow.action === 'delete'}
+                  pending={deletingId === row.id}
                   pendingLabel="Deleting…"
                   idle="Delete"
                 />
@@ -291,23 +266,21 @@ export default function ProductsPage() {
                 <Link to={routes.productEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.title}`}>
                   <IconPencil />
                 </Link>
-                <button
-                  type="button"
+                <Link
+                  to={routes.productDuplicate(row.id)}
                   className={adminIconBtnClass()}
                   aria-label={`Duplicate ${row.title}`}
-                  disabled={busyRow?.id === row.id}
-                  onClick={() => void onDuplicate(row.id)}
                 >
-                  {busyRow?.id === row.id && busyRow.action === 'duplicate' ? <IconSpinner /> : <IconCopy />}
-                </button>
+                  <IconCopy />
+                </Link>
                 <button
                   type="button"
                   className={adminIconBtnClass('danger')}
                   aria-label={`Delete ${row.title}`}
-                  disabled={busyRow?.id === row.id}
+                  disabled={deletingId === row.id}
                   onClick={() => void onDelete(row)}
                 >
-                  {busyRow?.id === row.id && busyRow.action === 'delete' ? <IconSpinner /> : <IconTrash />}
+                  {deletingId === row.id ? <IconSpinner /> : <IconTrash />}
                 </button>
               </div>
             </div>

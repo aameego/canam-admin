@@ -26,5 +26,7 @@ describe('paginationItems', () => {
 
   it('clamps an out-of-range page to the last page', () => {
     assert.deepEqual(paginationItems(99, 10), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    assert.deepEqual(paginationItems(-4, 5), [1, 2, 3, 4, 5]);
+    assert.deepEqual(paginationItems(1.9, 5), [1, 2, 3, 4, 5]);
   });
 });

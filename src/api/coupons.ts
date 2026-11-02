@@ -1,4 +1,4 @@
-import type { Coupon, CouponType, ListParams, PageResult } from '../types/api.ts';
+import type { Coupon, CouponListResult, CouponType, ListParams } from '../types/api.ts';
 import client from './client.ts';
 
 export type CouponWrite = {
@@ -11,12 +11,10 @@ export type CouponWrite = {
   endsAt?: string | null;
   usageLimit?: number | null;
   isActive?: boolean;
-  productIds?: string[];
-  categoryIds?: string[];
 };
 
 export const couponsApi = {
-  list: (params: ListParams = {}) => client.get<PageResult<Coupon>>('/admin/coupons', { params }),
+  list: (params: ListParams = {}) => client.get<CouponListResult>('/admin/coupons', { params }),
   get: (id: string) => client.get<{ item: Coupon }>(`/admin/coupons/${id}`),
   create: (body: CouponWrite) => client.post<{ item: Coupon }>('/admin/coupons', body),
   update: (id: string, body: Partial<CouponWrite>) =>

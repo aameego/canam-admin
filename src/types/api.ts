@@ -1,6 +1,16 @@
 export type UserRole = 'customer' | 'admin';
 
-export type AccountStatus = 'pending' | 'approved' | 'rejected';
+/** rejected = declined signup; blocked = approved account switched off by an admin. */
+export const ACCOUNT_STATUSES = ['pending', 'approved', 'rejected', 'blocked'] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
+
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
 
 export type CustomerListItem = {
   id: string;
@@ -34,6 +44,7 @@ export type CustomerOrder = {
   createdLabel: string;
   itemCount: number;
   total: number;
+  status: OrderStatus;
 };
 
 export type CustomerDetail = CustomerListItem & {
@@ -55,7 +66,7 @@ export type CustomerListResult = {
   page: number;
   limit: number;
   pages: number;
-  counts: { all: number; approved: number; pending: number; rejected: number };
+  counts: Record<AccountStatus | 'all', number>;
   q: string;
   status: AccountStatus | 'all';
 };
@@ -105,6 +116,7 @@ export type Product = {
   price: number;
   moq: number | null;
   customBranding: boolean;
+  inStock: boolean;
   bulkTiers: BulkTier[];
   volume: string | null;
   volumeUnit: string | null;
@@ -118,17 +130,10 @@ export type Category = {
   name: string;
   code: string;
   slug: string;
+  image: string;
   isActive: boolean;
   count?: number;
 };
-
-export type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'processing'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled';
 
 export type OrderItem = {
   productId: string;
@@ -154,16 +159,47 @@ export type Order = {
   phone: string;
   email: string;
   items: OrderItem[];
+  itemCount: number;
   subtotal: number;
   discount: number;
+  gst: number;
   total: number;
   couponId: string | null;
   couponCode: string | null;
   status: OrderStatus;
   source: string;
   notes: string;
+  paymentMethod: string;
   createdAt: string;
   updatedAt: string;
+  createdLabel?: string;
+};
+
+export type OrderCounts = {
+  all: number;
+  pending: number;
+  confirmed: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+};
+
+export type OrderListResult = PageResult<Order> & {
+  counts: OrderCounts;
+  revenue: number;
+  q: string;
+  status: OrderStatus | 'all';
+};
+
+export type OrderSummary = {
+  orders: number;
+  pendingOrders: number;
+  pendingApprovals: number;
+  revenue: number;
+  outOfStock: number;
+  recent: Order[];
+  daily: Array<{ date: string; orders: number; revenue: number }>;
 };
 
 export type CouponType = 'percent' | 'fixed';
@@ -180,8 +216,14 @@ export type Coupon = {
   usageLimit: number | null;
   usedCount: number;
   isActive: boolean;
-  productIds: string[];
-  categoryIds: string[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CouponListResult = PageResult<Coupon> & {
+  counts: { all: number; active: number; inactive: number };
+  q: string;
+  status: 'active' | 'inactive' | 'all';
 };
 
 export type PageResult<T> = {

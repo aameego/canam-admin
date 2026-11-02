@@ -64,6 +64,16 @@ export const useForgotPassword = () =>
     },
   });
 
+export const useResetLinkCheck = (token: string) =>
+  useQuery({
+    queryKey: ['auth', 'reset-link', token],
+    queryFn: async () => (await authApi.checkResetLink(token)).data,
+    enabled: Boolean(token.trim()),
+    retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
 export const useResetPassword = () =>
   useMutation({
     mutationFn: async ({ token, password }: { token: string; password: string }) => {

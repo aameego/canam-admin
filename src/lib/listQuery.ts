@@ -1,4 +1,6 @@
-import type { AccountStatus, ProductStatus } from '../types/api.ts';
+import { ACCOUNT_STATUSES, type AccountStatus, type OrderStatus, type ProductStatus } from '../types/api.ts';
+
+export const LIST_SEARCH_MAX = 200;
 
 export const parsePageParam = (value: string | null): number => {
   const page = Number(value || 1);
@@ -10,8 +12,25 @@ export const parseProductStatusFilter = (value: string | null): ProductStatus | 
   return 'all';
 };
 
-export const parseAccountStatusFilter = (value: string | null): AccountStatus | 'all' => {
-  if (value === 'approved' || value === 'pending' || value === 'rejected') return value;
+export const parseAccountStatusFilter = (value: string | null): AccountStatus | 'all' =>
+  (ACCOUNT_STATUSES as readonly (string | null)[]).includes(value) ? (value as AccountStatus) : 'all';
+
+export const parseOrderStatusFilter = (value: string | null): OrderStatus | 'all' => {
+  if (
+    value === 'pending' ||
+    value === 'confirmed' ||
+    value === 'processing' ||
+    value === 'shipped' ||
+    value === 'delivered' ||
+    value === 'cancelled'
+  ) {
+    return value;
+  }
+  return 'all';
+};
+
+export const parseCouponStatusFilter = (value: string | null): 'active' | 'inactive' | 'all' => {
+  if (value === 'active' || value === 'inactive') return value;
   return 'all';
 };
 
@@ -21,7 +40,7 @@ const cloneParams = (params: URLSearchParams) => new URLSearchParams(params);
 
 export const applyListSearch = (params: URLSearchParams, search: string): URLSearchParams => {
   const next = cloneParams(params);
-  const trimmed = search.trim();
+  const trimmed = search.trim().slice(0, LIST_SEARCH_MAX);
   if (trimmed) next.set('q', trimmed);
   else next.delete('q');
   next.set('page', '1');

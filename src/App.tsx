@@ -1,16 +1,21 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout.tsx';
 import GuestRoute from './components/GuestRoute.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import { useCurrentAdmin } from './hooks/useAuth.ts';
-import ComingNextPage from './pages/ComingNextPage.tsx';
 import CategoriesPage from './pages/CategoriesPage.tsx';
+import CouponDetailPage from './pages/CouponDetailPage.tsx';
+import CouponFormPage from './pages/CouponFormPage.tsx';
+import CouponsPage from './pages/CouponsPage.tsx';
+import OrderDetailPage from './pages/OrderDetailPage.tsx';
+import OrdersPage from './pages/OrdersPage.tsx';
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx';
 import CustomerFormPage from './pages/CustomerFormPage.tsx';
 import CustomersPage from './pages/CustomersPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
+import NotFoundPage from './pages/NotFoundPage.tsx';
 import ProductDetailPage from './pages/ProductDetailPage.tsx';
 import ProductFormPage from './pages/ProductFormPage.tsx';
 import ProductsPage from './pages/ProductsPage.tsx';
@@ -47,13 +52,15 @@ function AppRoutes() {
           <Route path="/products/:id/edit" element={<ProductFormPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path={routes.categories} element={<CategoriesPage />} />
-          <Route path={routes.orders} element={<ComingNextPage name="Orders" />} />
-          <Route path={routes.coupons} element={<ComingNextPage name="Coupons" />} />
-          <Route path="/content" element={<ComingNextPage name="Content" />} />
-          <Route path="/reports" element={<ComingNextPage name="Reports" />} />
+          <Route path={routes.orders} element={<OrdersPage />} />
+          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path={routes.coupons} element={<CouponsPage />} />
+          <Route path={routes.couponNew} element={<CouponFormPage />} />
+          <Route path="/coupons/:id/edit" element={<CouponFormPage />} />
+          <Route path="/coupons/:id" element={<CouponDetailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to={routes.root} replace />} />
     </Routes>
   );
 }

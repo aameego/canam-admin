@@ -15,6 +15,7 @@ export type ProductWrite = {
   price: number;
   moq?: number | null;
   customBranding?: boolean;
+  inStock?: boolean;
   bulkTiers?: Product['bulkTiers'];
   volume?: string | null;
   volumeUnit?: string | null;
@@ -35,17 +36,23 @@ export const productsApi = {
     client.patch<{ item: Product }>(`/products/${id}`, body),
   updateStatus: (id: string, status: ProductStatus) =>
     client.patch<{ item: Product }>(`/products/${id}/status`, { status }),
-  duplicate: (id: string) => client.post<{ item: Product }>(`/products/${id}/duplicate`),
   remove: (id: string) => client.delete<{ ok: boolean }>(`/products/${id}`),
   exportCsv: (params: ListParams = {}) =>
     client.get<Blob>('/products/export', { params, responseType: 'blob' }),
 };
 
+export type CategoryWrite = {
+  name?: string;
+  code?: string;
+  slug?: string;
+  image?: string;
+  isActive?: boolean;
+};
+
 export const categoriesApi = {
   list: () => client.get<{ categories: Category[] }>('/categories'),
-  create: (body: { name: string; code?: string; slug?: string; isActive?: boolean }) =>
-    client.post<{ category: Category }>('/categories', body),
-  update: (id: string, body: Partial<{ name: string; code: string; slug: string; isActive: boolean }>) =>
+  create: (body: CategoryWrite) => client.post<{ category: Category }>('/categories', body),
+  update: (id: string, body: CategoryWrite) =>
     client.patch<{ category: Category }>(`/categories/${id}`, body),
   remove: (id: string) => client.delete<{ ok: boolean }>(`/categories/${id}`),
 };

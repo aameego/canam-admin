@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import PasswordInput from '../components/PasswordInput.tsx';
 import { useAdminLogin, useForgotPassword } from '../hooks/useAuth.ts';
 import { validateAdminLogin, validateForgotPasswordEmail } from '../lib/authAccess.ts';
 import { DEV_ADMIN_LOGIN, isDevLoginPrefillEnabled } from '../lib/devLogin.ts';
+import { EMAIL_MAX } from '../lib/fields.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 
 type Panel = 'login' | 'forgot' | 'request-access';
@@ -94,6 +96,7 @@ export default function LoginPage() {
                     setEmail(e.target.value);
                   }}
                   required
+                  maxLength={EMAIL_MAX}
                 />
               </div>
 
@@ -101,10 +104,9 @@ export default function LoginPage() {
                 <label htmlFor="admin-password" className={labelClass}>
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="admin-password"
                   className={fieldClass}
-                  type="password"
                   autoComplete="current-password"
                   placeholder="••••••••••••"
                   value={password}
@@ -190,6 +192,7 @@ export default function LoginPage() {
                     setEmail(e.target.value);
                   }}
                   required
+                  maxLength={EMAIL_MAX}
                 />
               </div>
               <button

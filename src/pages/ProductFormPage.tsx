@@ -1,5 +1,5 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
 import {
   useCategories,
@@ -12,12 +12,24 @@ import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import {
   addBulkTierRow,
   bulkTiersToForm,
+  duplicateProductForm,
   EMPTY_PRODUCT_FORM,
   emptyBulkTier,
   MAX_BULK_TIERS,
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_DIMENSION_MAX,
   PRODUCT_IMAGE_ACCEPT,
+  PRODUCT_IMAGE_URL_MAX,
+  PRODUCT_MATERIAL_MAX,
+  PRODUCT_PACK_SIZE_MAX,
+  PRODUCT_SKU_MAX,
+  PRODUCT_SPECS_MAX,
+  PRODUCT_TITLE_MAX,
+  PRODUCT_VOLUME_MAX,
+  PRODUCT_VOLUME_UNIT_MAX,
   productToForm,
   removeBulkTierRow,
+  selectableCategories,
   validateProductForm,
   validateProductImageFile,
   type BulkTierForm,
@@ -32,8 +44,11 @@ const labelClass = 'font-display text-[13px] font-bold text-navy';
 export default function ProductFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
+  const [searchParams] = useSearchParams();
+  const duplicateFromId = isEdit ? undefined : searchParams.get('from') || undefined;
   const navigate = useNavigate();
   const existing = useProduct(id);
+  const source = useProduct(duplicateFromId);
   const categories = useCategories();
   const create = useCreateProduct();
   const update = useUpdateProduct();
@@ -41,12 +56,23 @@ export default function ProductFormPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
   const [tiers, setTiers] = useState<BulkTierForm[]>([emptyBulkTier()]);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (!existing.data) return;
     setForm(productToForm(existing.data));
     setTiers(bulkTiersToForm(existing.data.bulkTiers));
   }, [existing.data]);
+
+  useEffect(() => {
+    if (!source.data) return;
+    setForm(duplicateProductForm(source.data));
+    setTiers(bulkTiersToForm(source.data.bulkTiers));
+  }, [source.data]);
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [error]);
 
   const onChange = (key: keyof typeof EMPTY_PRODUCT_FORM) =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -120,13 +146,15 @@ export default function ProductFormPage() {
   const saving = create.isPending || update.isPending;
   const busy = uploading || saving;
 
-  if (isEdit && existing.isLoading) {
+  if ((isEdit && existing.isLoading) || (duplicateFromId && source.isLoading)) {
     return (
       <div className="relative min-h-48 w-full min-w-0 max-w-4xl rounded-lg border border-line bg-white">
         <BusyOverlay label="Loading product…" />
       </div>
     );
   }
+
+  const cancelTo = isEdit && id ? routes.product(id) : duplicateFromId ? routes.product(duplicateFromId) : routes.products;
 
   return (
     <section className="w-full min-w-0 max-w-4xl">
@@ -139,24 +167,26 @@ export default function ProductFormPage() {
         className="relative mt-4 rounded-lg border border-line bg-white p-5 sm:p-8"
       >
         {saving ? <BusyOverlay label={isEdit ? 'Saving product…' : 'Creating product…'} /> : null}
-        {error && (
-          <p className="mb-4 font-body text-[13px] text-canam-red" role="alert">
-            {error}
+        {duplicateFromId && (
+          <p className="mb-4 rounded-[6px] border border-line bg-canvas px-3 py-2 font-body text-[13px] text-ink">
+            {source.data
+              ? `Copying ${source.data.title}. Nothing is saved until you create the product — check the SKU first.`
+              : 'The product to copy was not found. Fill in the details for a new product.'}
           </p>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Product name" htmlFor="title">
-            <input id="title" className={fieldClass} value={form.title} onChange={onChange('title')} required />
+            <input id="title" className={fieldClass} value={form.title} onChange={onChange('title')} required maxLength={PRODUCT_TITLE_MAX} />
           </Field>
           <Field label="SKU" htmlFor="sku">
-            <input id="sku" className={fieldClass} value={form.sku} onChange={onChange('sku')} required />
+            <input id="sku" className={fieldClass} value={form.sku} onChange={onChange('sku')} required maxLength={PRODUCT_SKU_MAX} />
           </Field>
           <Field label="Category" htmlFor="categoryId">
             <select id="categoryId" className={fieldClass} value={form.categoryId} onChange={onChange('categoryId')} required>
               <option value="">Select category</option>
-              {(categories.data ?? []).map((category) => (
+              {selectableCategories(categories.data ?? [], form.categoryId).map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.label}
                 </option>
               ))}
             </select>
@@ -170,12 +200,12 @@ export default function ProductFormPage() {
           </Field>
           <div className="sm:col-span-2">
             <Field label="Description" htmlFor="description">
-              <textarea id="description" className={`${fieldClass} min-h-24`} value={form.description} onChange={onChange('description')} />
+              <textarea id="description" className={`${fieldClass} min-h-24`} value={form.description} onChange={onChange('description')} maxLength={PRODUCT_DESCRIPTION_MAX} />
             </Field>
           </div>
           <div className="sm:col-span-2">
             <Field label="Specs" htmlFor="specs">
-              <input id="specs" className={fieldClass} value={form.specs} onChange={onChange('specs')} />
+              <input id="specs" className={fieldClass} value={form.specs} onChange={onChange('specs')} maxLength={PRODUCT_SPECS_MAX} />
             </Field>
           </div>
           <div className="sm:col-span-2 flex flex-col gap-1.5">
@@ -214,42 +244,47 @@ export default function ProductFormPage() {
                 value={form.image}
                 onChange={onChange('image')}
                 placeholder="https://"
+                maxLength={PRODUCT_IMAGE_URL_MAX}
               />
             </Field>
           </div>
           <Field label="Price" htmlFor="price">
-            <input id="price" type="number" step="0.01" className={fieldClass} value={form.price} onChange={onChange('price')} required />
+            <input id="price" type="number" min="0" step="0.01" className={fieldClass} value={form.price} onChange={onChange('price')} required />
           </Field>
           <Field label="Unit price" htmlFor="priceUnit">
-            <input id="priceUnit" type="number" step="0.01" className={fieldClass} value={form.priceUnit} onChange={onChange('priceUnit')} />
+            <input id="priceUnit" type="number" min="0" step="0.01" className={fieldClass} value={form.priceUnit} onChange={onChange('priceUnit')} />
           </Field>
           <Field label="Carton price" htmlFor="priceCarton">
-            <input id="priceCarton" type="number" step="0.01" className={fieldClass} value={form.priceCarton} onChange={onChange('priceCarton')} />
+            <input id="priceCarton" type="number" min="0" step="0.01" className={fieldClass} value={form.priceCarton} onChange={onChange('priceCarton')} />
           </Field>
           <Field label="Pieces per carton" htmlFor="piecesPerCarton">
-            <input id="piecesPerCarton" type="number" className={fieldClass} value={form.piecesPerCarton} onChange={onChange('piecesPerCarton')} />
+            <input id="piecesPerCarton" type="number" min="0" className={fieldClass} value={form.piecesPerCarton} onChange={onChange('piecesPerCarton')} />
           </Field>
           <Field label="MOQ" htmlFor="moq">
-            <input id="moq" type="number" className={fieldClass} value={form.moq} onChange={onChange('moq')} />
+            <input id="moq" type="number" min="0" className={fieldClass} value={form.moq} onChange={onChange('moq')} />
           </Field>
           <Field label="Pack size" htmlFor="packSize">
-            <input id="packSize" className={fieldClass} value={form.packSize} onChange={onChange('packSize')} />
+            <input id="packSize" className={fieldClass} value={form.packSize} onChange={onChange('packSize')} maxLength={PRODUCT_PACK_SIZE_MAX} />
           </Field>
           <Field label="Dimension" htmlFor="dimension">
-            <input id="dimension" className={fieldClass} value={form.dimension} onChange={onChange('dimension')} />
+            <input id="dimension" className={fieldClass} value={form.dimension} onChange={onChange('dimension')} maxLength={PRODUCT_DIMENSION_MAX} />
           </Field>
           <Field label="Material" htmlFor="material">
-            <input id="material" className={fieldClass} value={form.material} onChange={onChange('material')} />
+            <input id="material" className={fieldClass} value={form.material} onChange={onChange('material')} maxLength={PRODUCT_MATERIAL_MAX} />
           </Field>
           <Field label="Volume" htmlFor="volume">
-            <input id="volume" className={fieldClass} value={form.volume} onChange={onChange('volume')} />
+            <input id="volume" className={fieldClass} value={form.volume} onChange={onChange('volume')} maxLength={PRODUCT_VOLUME_MAX} />
           </Field>
           <Field label="Volume unit" htmlFor="volumeUnit">
-            <input id="volumeUnit" className={fieldClass} value={form.volumeUnit} onChange={onChange('volumeUnit')} />
+            <input id="volumeUnit" className={fieldClass} value={form.volumeUnit} onChange={onChange('volumeUnit')} maxLength={PRODUCT_VOLUME_UNIT_MAX} />
           </Field>
           <label className="flex items-center gap-2 font-display text-[13px] font-bold text-navy sm:col-span-2">
             <input type="checkbox" checked={form.customBranding} onChange={onChange('customBranding')} />
             Custom branding available
+          </label>
+          <label className="flex items-center gap-2 font-display text-[13px] font-bold text-navy sm:col-span-2">
+            <input type="checkbox" checked={form.inStock} onChange={onChange('inStock')} />
+            In stock
           </label>
           <div className="sm:col-span-2">
             <div className="flex items-center justify-between gap-3">
@@ -303,6 +338,11 @@ export default function ProductFormPage() {
             </div>
           </div>
         </div>
+        {error && (
+          <p ref={errorRef} className="mt-6 font-body text-[13px] text-canam-red" role="alert">
+            {error}
+          </p>
+        )}
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             type="submit"
@@ -316,7 +356,7 @@ export default function ProductFormPage() {
             />
           </button>
           <Link
-            to={isEdit && id ? routes.product(id) : routes.products}
+            to={cancelTo}
             className="flex h-11 items-center justify-center px-4 font-display text-[13px] font-bold text-navy"
           >
             Cancel

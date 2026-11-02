@@ -15,9 +15,9 @@ import {
   adminShellLocksSidebar,
   adminUsesPersistentSidebar,
   adminUsesTableLayout,
-  COMING_NEXT_COPY,
   customerStatusHref,
   dashboardCustomerStats,
+  dashboardKpis,
 } from './adminChrome.ts';
 import { ADMIN_CONTENT_ID } from './pagination.ts';
 
@@ -34,12 +34,21 @@ describe('adminPageTitle', () => {
     assert.equal(adminPageTitle('/products/abc/edit'), 'Edit product');
     assert.equal(adminPageTitle('/categories'), 'Categories');
     assert.equal(adminPageTitle('/orders'), 'Orders');
+    assert.equal(adminPageTitle('/orders/abc'), 'Order details');
     assert.equal(adminPageTitle('/coupons'), 'Coupons');
+    assert.equal(adminPageTitle('/coupons/new'), 'Add coupon');
+    assert.equal(adminPageTitle('/coupons/abc'), 'Coupon details');
+    assert.equal(adminPageTitle('/coupons/abc/edit'), 'Edit coupon');
   });
 
-  it('falls back to Dashboard', () => {
+  it('names the dashboard and unknown pages', () => {
     assert.equal(adminPageTitle('/'), 'Dashboard');
-    assert.equal(COMING_NEXT_COPY, 'This screen is not built yet.');
+    assert.equal(adminPageTitle('/coupons-x'), 'Page not found');
+    assert.equal(adminPageTitle('/categories/abc'), 'Page not found');
+    assert.equal(adminPageTitle('/orders/abc/edit'), 'Page not found');
+    assert.equal(adminPageTitle('/products/abc/edit/x'), 'Page not found');
+    assert.equal(adminPageTitle('/products/abc/'), 'Product details');
+    assert.equal(adminPageTitle('/customers/abc/new'), 'Page not found');
   });
 });
 
@@ -105,17 +114,33 @@ describe('admin action buttons', () => {
 
 describe('dashboardCustomerStats', () => {
   it('links each count to the matching customer filter', () => {
-    const stats = dashboardCustomerStats({ all: 8, approved: 7, pending: 1, rejected: 0 });
+    const stats = dashboardCustomerStats({ all: 10, approved: 6, pending: 1, rejected: 1, blocked: 2 });
     assert.deepEqual(
       stats.map((item) => [item.label, item.value, item.href]),
       [
-        ['Total customers', 8, customerStatusHref('all')],
+        ['Total customers', 10, customerStatusHref('all')],
         ['Pending approvals', 1, customerStatusHref('pending')],
-        ['Approved', 7, customerStatusHref('approved')],
-        ['Blocked', 0, customerStatusHref('rejected')],
+        ['Approved', 6, customerStatusHref('approved')],
+        ['Blocked', 2, customerStatusHref('blocked')],
       ],
     );
+    assert.equal(customerStatusHref('blocked'), '/customers?status=blocked');
     assert.equal(customerStatusHref('all'), '/customers');
     assert.equal(customerStatusHref('pending'), '/customers?status=pending');
+  });
+});
+
+describe('dashboardKpis', () => {
+  it('uses the Figma dashboard mix of orders, approvals, revenue, and stock', () => {
+    const stats = dashboardKpis({ orders: 12, pendingApprovals: 3, revenue: 410.5, outOfStock: 2 });
+    assert.deepEqual(
+      stats.map((item) => [item.label, item.value, item.href, item.kind]),
+      [
+        ['Total orders', 12, '/orders', 'count'],
+        ['Pending approvals', 3, '/customers?status=pending', 'count'],
+        ['Revenue', 410.5, '/orders', 'money'],
+        ['Out of stock', 2, '/products', 'count'],
+      ],
+    );
   });
 });

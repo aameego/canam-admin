@@ -11,6 +11,8 @@ import {
 describe('shouldRedirectToLogin', () => {
   it('sends expired admin sessions back to login instead of staying on a product page', () => {
     assert.equal(shouldRedirectToLogin('/products'), true);
+    assert.equal(shouldRedirectToLogin('/orders'), true);
+    assert.equal(shouldRedirectToLogin('/customers/abc'), true);
     assert.equal(shouldRedirectToLogin('/products?page=1'), true);
     assert.equal(shouldRedirectToLogin('/login'), false);
     assert.equal(shouldRedirectToLogin('/login/'), false);

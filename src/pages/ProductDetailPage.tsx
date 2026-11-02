@@ -2,41 +2,34 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
 import { ProductStatusBadge } from '../components/StatusBadge.tsx';
-import { useDeleteProduct, useDuplicateProduct, useProduct, useUpdateProductStatus } from '../hooks/useProducts.ts';
+import { useDeleteProduct, useProduct, useUpdateProductStatus } from '../hooks/useProducts.ts';
 import { money } from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
+import { validateProductStatusChange } from '../lib/products.ts';
 import { routes } from '../routes.ts';
-import type { ProductStatus } from '../types/api.ts';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const query = useProduct(id);
   const updateStatus = useUpdateProductStatus();
-  const duplicate = useDuplicateProduct();
   const remove = useDeleteProduct();
   const [error, setError] = useState('');
   const product = query.data;
 
-  const onStatus = async (status: ProductStatus) => {
+  const onStatus = async (status: string) => {
     if (!id) return;
     setError('');
+    const parsed = validateProductStatusChange(status);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     try {
-      await updateStatus.mutateAsync({ id, status });
+      await updateStatus.mutateAsync({ id, status: parsed.status });
       await query.refetch();
     } catch (err) {
       setError(getErrorMessage(err, 'Could not update status.'));
-    }
-  };
-
-  const onDuplicate = async () => {
-    if (!id) return;
-    setError('');
-    try {
-      const res = await duplicate.mutateAsync(id);
-      navigate(routes.productEdit(res.data.item.id));
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not duplicate this product.'));
     }
   };
 
@@ -52,7 +45,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  const busy = updateStatus.isPending || duplicate.isPending || remove.isPending;
+  const busy = updateStatus.isPending || remove.isPending;
 
   if (query.isLoading) {
     return (
@@ -104,14 +97,12 @@ export default function ProductDetailPage() {
             >
               Edit product
             </Link>
-            <button
-              type="button"
-              className="h-11 rounded-[6px] border border-line px-4 font-display text-[13px] font-bold text-navy disabled:opacity-70"
-              onClick={() => void onDuplicate()}
-              disabled={busy}
+            <Link
+              to={routes.productDuplicate(product.id)}
+              className="flex h-11 items-center justify-center rounded-[6px] border border-line px-4 font-display text-[13px] font-bold text-navy"
             >
-              <BusyLabel pending={duplicate.isPending} pendingLabel="Duplicating…" idle="Duplicate" />
-            </button>
+              Duplicate
+            </Link>
             {product.status !== 'active' ? (
               <button
                 type="button"
@@ -154,6 +145,7 @@ export default function ProductDetailPage() {
           <Fact label="Material" value={product.material || '—'} />
           <Fact label="Dimension" value={product.dimension || '—'} />
           <Fact label="Custom branding" value={product.customBranding ? 'Yes' : 'No'} />
+          <Fact label="In stock" value={product.inStock !== false ? 'Yes' : 'No'} />
         </dl>
         {product.bulkTiers.length > 0 && (
           <div className="mt-6 border-t border-line pt-6">

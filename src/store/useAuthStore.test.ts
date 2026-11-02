@@ -37,4 +37,11 @@ describe('useAuthStore', () => {
     assert.equal(useAuthStore.getState().isAuthenticated, false);
     assert.equal(useAuthStore.getState().isLoading, false);
   });
+
+  it('setUser(null) also clears the session', () => {
+    useAuthStore.getState().setUser(adminUser);
+    useAuthStore.getState().setUser(null);
+    assert.equal(useAuthStore.getState().isAuthenticated, false);
+    assert.equal(useAuthStore.getState().user, null);
+  });
 });

@@ -5,14 +5,14 @@ export const getErrorMessage = (err: unknown, fallback: string): string => {
   } | null;
 
   const fromServer = anyErr?.response?.data?.message ?? anyErr?.response?.data?.error;
-  if (typeof fromServer === 'string' && fromServer.trim()) return fromServer;
+  if (typeof fromServer === 'string' && fromServer.trim()) return fromServer.trim();
 
   const axiosMessage = anyErr?.message;
   if (typeof axiosMessage === 'string' && axiosMessage.trim()) {
     if (/network error|timeout/i.test(axiosMessage)) {
       return 'Network error. Please check your connection and try again.';
     }
-    return axiosMessage;
+    return axiosMessage.trim();
   }
 
   return fallback;

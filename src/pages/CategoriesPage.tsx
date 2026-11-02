@@ -1,37 +1,81 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import BusyOverlay, { BusyLabel } from '../components/BusyOverlay.tsx';
-import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '../hooks/useProducts.ts';
+import {
+  useCategories,
+  useCreateCategory,
+  useDeleteCategory,
+  useUpdateCategory,
+  useUploadProductImage,
+} from '../hooks/useProducts.ts';
 import { adminCardActionClass } from '../lib/adminChrome.ts';
-import { validateCategoryInput } from '../lib/products.ts';
+import {
+  CATEGORY_CODE_MAX,
+  CATEGORY_NAME_MAX,
+  PRODUCT_IMAGE_ACCEPT,
+  PRODUCT_IMAGE_URL_MAX,
+  productCountLabel,
+  validateCategoryInput,
+  validateProductImageFile,
+} from '../lib/products.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { routes } from '../routes.ts';
+import type { Category } from '../types/api.ts';
+
+const fieldClass =
+  'h-11 rounded-[6px] border border-line px-3 font-body text-[14px] outline-none focus:border-navy';
 
 export default function CategoriesPage() {
   const query = useCategories();
   const create = useCreateCategory();
   const update = useUpdateCategory();
   const remove = useDeleteCategory();
+  const uploadPhoto = useUploadProductImage();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [image, setImage] = useState('');
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState('');
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
+  const [editImage, setEditImage] = useState('');
   const [busyId, setBusyId] = useState('');
+
+  const onPhotoPick = async (event: ChangeEvent<HTMLInputElement>, apply: (url: string) => void) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setError('');
+    const check = validateProductImageFile(file);
+    if (!check.ok) {
+      setError(check.error);
+      return;
+    }
+    try {
+      const res = await uploadPhoto.mutateAsync(file);
+      apply(res.data.url);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not upload this photo.'));
+    }
+  };
 
   const onCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
-    const parsed = validateCategoryInput(name, code);
+    const parsed = validateCategoryInput(name, code, image);
     if (!parsed.ok) {
       setError(parsed.error);
       return;
     }
     try {
-      await create.mutateAsync({ name: parsed.name, code: parsed.code });
+      await create.mutateAsync({
+        name: parsed.name,
+        image: parsed.image,
+        ...(parsed.code ? { code: parsed.code } : {}),
+      });
       setName('');
       setCode('');
+      setImage('');
     } catch (err) {
       setError(getErrorMessage(err, 'Could not create this category.'));
     }
@@ -63,16 +107,17 @@ export default function CategoriesPage() {
     }
   };
 
-  const startEdit = (id: string, currentName: string, currentCode: string) => {
+  const startEdit = (category: Category) => {
     setError('');
-    setEditingId(id);
-    setEditName(currentName);
-    setEditCode(currentCode);
+    setEditingId(category.id);
+    setEditName(category.name);
+    setEditCode(category.code);
+    setEditImage(category.image || '');
   };
 
   const onSaveEdit = async (id: string) => {
     setError('');
-    const parsed = validateCategoryInput(editName, editCode);
+    const parsed = validateCategoryInput(editName, editCode, editImage);
     if (!parsed.ok) {
       setError(parsed.error);
       return;
@@ -83,6 +128,7 @@ export default function CategoriesPage() {
         id,
         body: {
           name: parsed.name,
+          image: parsed.image,
           ...(parsed.code ? { code: parsed.code } : {}),
         },
       });
@@ -93,6 +139,8 @@ export default function CategoriesPage() {
       setBusyId('');
     }
   };
+
+  const creating = create.isPending || uploadPhoto.isPending;
 
   return (
     <section className="flex min-w-0 flex-col gap-6">
@@ -108,25 +156,45 @@ export default function CategoriesPage() {
         )}
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_160px_auto]">
           <input
-            className="h-11 rounded-[6px] border border-line px-3 font-body text-[14px] outline-none focus:border-navy"
+            className={fieldClass}
             placeholder="Category name"
             value={name}
+            maxLength={CATEGORY_NAME_MAX}
             onChange={(event) => setName(event.target.value)}
           />
           <input
-            className="h-11 rounded-[6px] border border-line px-3 font-body text-[14px] outline-none focus:border-navy"
+            className={fieldClass}
             placeholder="Code (optional)"
             value={code}
+            maxLength={CATEGORY_CODE_MAX}
             onChange={(event) => setCode(event.target.value)}
           />
           <button
             type="submit"
-            disabled={create.isPending}
+            disabled={creating}
             className="h-11 cursor-pointer rounded-[6px] bg-canam-red px-4 font-display text-[13px] font-bold text-white transition-colors hover:bg-canam-red/90 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <BusyLabel pending={create.isPending} pendingLabel="Saving…" idle="Add" />
           </button>
         </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+          <input
+            className={fieldClass}
+            placeholder="Image URL (optional)"
+            value={image}
+            maxLength={PRODUCT_IMAGE_URL_MAX}
+            onChange={(event) => setImage(event.target.value)}
+          />
+          <input
+            type="file"
+            accept={PRODUCT_IMAGE_ACCEPT}
+            disabled={creating}
+            aria-label="Upload category photo"
+            onChange={(event) => void onPhotoPick(event, setImage)}
+            className="font-body text-[13px] text-ink file:mr-3 file:h-11 file:rounded-[6px] file:border file:border-line file:bg-canvas file:px-3 file:font-display file:text-[13px] file:font-bold file:text-navy"
+          />
+        </div>
+        {image ? <img src={image} alt="" className="mt-3 size-16 rounded object-cover" /> : null}
       </form>
 
       {query.isLoading && (
@@ -140,24 +208,51 @@ export default function CategoriesPage() {
             {editingId === category.id ? (
               <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_140px]">
                 <input
-                  className="h-11 rounded-[6px] border border-line px-3 font-body text-[14px] outline-none focus:border-navy"
+                  className={fieldClass}
                   value={editName}
+                  maxLength={CATEGORY_NAME_MAX}
                   onChange={(event) => setEditName(event.target.value)}
                   aria-label="Category name"
                 />
                 <input
-                  className="h-11 rounded-[6px] border border-line px-3 font-body text-[14px] outline-none focus:border-navy"
+                  className={fieldClass}
                   value={editCode}
+                  maxLength={CATEGORY_CODE_MAX}
                   onChange={(event) => setEditCode(event.target.value)}
                   aria-label="Category code"
                 />
+                <input
+                  className={`${fieldClass} sm:col-span-2`}
+                  value={editImage}
+                  maxLength={PRODUCT_IMAGE_URL_MAX}
+                  onChange={(event) => setEditImage(event.target.value)}
+                  placeholder="https://"
+                  aria-label="Category image URL"
+                />
+                <input
+                  type="file"
+                  accept={PRODUCT_IMAGE_ACCEPT}
+                  disabled={busyId === category.id || uploadPhoto.isPending}
+                  aria-label="Upload category photo"
+                  onChange={(event) => void onPhotoPick(event, setEditImage)}
+                  className="font-body text-[13px] text-ink file:mr-3 file:h-11 file:rounded-[6px] file:border file:border-line file:bg-canvas file:px-3 file:font-display file:text-[13px] file:font-bold file:text-navy sm:col-span-2"
+                />
               </div>
             ) : (
-              <div className="min-w-0">
-                <p className="font-display text-[14px] font-bold text-navy">{category.name}</p>
-                <p className="font-body text-[13px] text-muted">
-                  {category.code} · {category.count ?? 0} products · {category.isActive ? 'Active' : 'Hidden'}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                {category.image ? (
+                  <img src={category.image} alt="" className="size-10 shrink-0 rounded object-cover" />
+                ) : (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded bg-canvas font-display text-[13px] font-bold text-navy">
+                    {category.name.charAt(0)}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="font-display text-[14px] font-bold text-navy">{category.name}</p>
+                  <p className="font-body text-[13px] text-muted">
+                    {category.code} · {productCountLabel(category.count)} · {category.isActive ? 'Active' : 'Hidden'}
+                  </p>
+                </div>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -183,9 +278,9 @@ export default function CategoriesPage() {
                 <button
                   type="button"
                   className={`${adminCardActionClass()} px-3`}
-                  onClick={() => startEdit(category.id, category.name, category.code)}
+                  onClick={() => startEdit(category)}
                 >
-                  Rename
+                  Edit
                 </button>
               )}
               <button
