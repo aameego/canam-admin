@@ -7,7 +7,11 @@ const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   withCredentials: true,
   timeout: 15_000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    // Scopes auth cookies to the admin panel so staff login stays off the shop site.
+    'X-Client-App': 'admin',
+  },
 });
 
 let isRefreshing = false;
