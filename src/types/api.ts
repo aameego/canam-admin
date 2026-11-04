@@ -88,6 +88,36 @@ export type User = {
   businessName: string;
   businessType: string;
   role: UserRole;
+  /** Admins only, from the backend role. */
+  adminRoleName: string;
+  permissions: string[];
+};
+
+export type PermissionModule = { module: string; permissions: { key: string; label: string }[] };
+
+export type AdminRole = {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isSystem: boolean;
+  memberCount: number;
+};
+
+export type TeamMember = {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  department: string;
+  roleId: string;
+  roleName: string;
+  status: 'active' | 'inactive';
+  invitePending: boolean;
+  lastActiveAt: string | null;
+  isYou: boolean;
 };
 
 export type ProductStatus = 'active' | 'inactive' | 'draft';

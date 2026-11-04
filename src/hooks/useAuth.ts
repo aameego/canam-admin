@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { authApi } from '../api/auth.ts';
-import { ADMIN_ACCESS_DENIED, canAccessAdmin, mapCurrentUser } from '../lib/authAccess.ts';
+import { ADMIN_ACCESS_DENIED, can, canAccessAdmin, mapCurrentUser } from '../lib/authAccess.ts';
 import { adminQueryKeys } from '../lib/queryKeys.ts';
 import { useAuthStore } from '../store/useAuthStore.ts';
 
@@ -92,4 +92,10 @@ export const useAdminLogout = () => {
       queryClient.clear();
     },
   });
+};
+
+/** `can('orders.edit')` for the signed-in admin; use to hide actions their role can't perform. */
+export const useCan = () => {
+  const user = useAuthStore((state) => state.user);
+  return (...anyOf: string[]) => can(user, ...anyOf);
 };

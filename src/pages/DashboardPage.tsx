@@ -9,8 +9,10 @@ import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { chartBarHeight, formatOrderDate, orderItemSummary } from '../lib/orders.ts';
 import { useAuthStore } from '../store/useAuthStore.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 
 export default function DashboardPage() {
+  const can = useCan();
   const user = useAuthStore((state) => state.user);
   const customers = useCustomers({ page: 1 });
   const summary = useOrderSummary();
@@ -34,18 +36,18 @@ export default function DashboardPage() {
           Signed in as {user?.contactName || user?.email}.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-          <Link
+          {can('orders.view') && <Link
             to={routes.orders}
             className="inline-flex min-h-11 w-full items-center justify-center rounded-[6px] bg-navy px-4 py-2.5 font-display text-[13px] font-bold text-white sm:w-auto"
           >
             Open orders
-          </Link>
-          <Link
+          </Link>}
+          {can('customers.view') && <Link
             to={routes.customers}
             className="inline-flex min-h-11 w-full items-center justify-center rounded-[6px] border border-navy px-4 py-2.5 font-display text-[13px] font-bold text-navy sm:w-auto"
           >
             Open customers
-          </Link>
+          </Link>}
         </div>
       </div>
 
@@ -75,9 +77,9 @@ export default function DashboardPage() {
           {summary.isFetching && recent.length === 0 ? <BusyOverlay label="Loading orders…" /> : null}
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-display text-[15px] font-extrabold text-navy">Recent orders</h3>
-            <Link to={routes.orders} className="font-display text-[13px] font-bold text-canam-red">
+            {can('orders.view') && <Link to={routes.orders} className="font-display text-[13px] font-bold text-canam-red">
               View all →
-            </Link>
+            </Link>}
           </div>
           {recent.length === 0 && !summary.isLoading && (
             <p className="mt-6 font-body text-[14px] text-muted">No orders yet.</p>

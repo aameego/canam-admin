@@ -11,6 +11,8 @@ type MeResponse = {
     businessName?: string;
     businessType?: string;
     role?: string;
+    adminRoleName?: string;
+    permissions?: string[];
   };
 };
 

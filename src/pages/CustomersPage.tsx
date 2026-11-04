@@ -5,6 +5,7 @@ import Pagination from '../components/Pagination.tsx';
 import CustomerStatusMenu from '../components/CustomerStatusMenu.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { IconDownload, IconEye, IconMore, IconPencil, IconSearch } from '../components/icons.tsx';
+import { useCan } from '../hooks/useAuth.ts';
 import { useCustomers, useExportCustomers, useUpdateCustomerStatus } from '../hooks/useCustomers.ts';
 import { adminCardActionClass, adminFilterChipClass, adminIconBtnClass } from '../lib/adminChrome.ts';
 import {
@@ -56,6 +57,7 @@ export default function CustomersPage() {
   });
   const updateStatus = useUpdateCustomerStatus();
   const exporter = useExportCustomers();
+  const can = useCan();
   const data = query.data;
   const counts = data?.counts ?? { all: 0, approved: 0, pending: 0, rejected: 0, blocked: 0 };
   const isPendingView = status === 'pending';
@@ -116,7 +118,7 @@ export default function CustomersPage() {
           />
         </label>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
-          <button
+          {can('customers.export') && <button
             type="button"
             className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-navy px-3 font-display text-[13px] font-bold text-navy transition-colors hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => void onExport()}
@@ -128,14 +130,14 @@ export default function CustomersPage() {
               pendingLabel="Exporting…"
               idle="Export Customers"
             />
-          </button>
-          <Link
+          </button>}
+          {can('customers.edit') && <Link
             to={routes.customerNew}
             className="flex h-11 cursor-pointer items-center justify-center rounded-[6px] bg-canam-red px-3 font-display text-[13px] font-bold text-white transition-colors hover:bg-canam-red/90"
           >
             <span className="sm:hidden">+ Add</span>
             <span className="hidden sm:inline">+ Add customers</span>
-          </Link>
+          </Link>}
         </div>
       </div>
 
@@ -283,6 +285,7 @@ function CustomerCard({
   busy: boolean;
   onStatus: (next: CustomerStatusAction['next']) => void;
 }) {
+  const can = useCan();
   return (
     <article className="min-w-0 rounded-lg border border-line bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -305,18 +308,18 @@ function CustomerCard({
           View
         </Link>
         <div className="grid min-w-0 grid-cols-2 gap-2">
-        <Link
+        {can('customers.edit') && <Link
           to={routes.customerEdit(row.id)}
           className={adminCardActionClass()}
           aria-label={`Edit ${row.businessName}`}
         >
           Edit
-        </Link>
-        <button type="button" className={adminCardActionClass()} aria-label="More actions" onClick={onToggleMenu}>
+        </Link>}
+        {can('customers.approve') && <button type="button" className={adminCardActionClass()} aria-label="More actions" onClick={onToggleMenu}>
           More
-        </button>
+        </button>}
         </div>
-        {menuOpen && (
+        {menuOpen && can('customers.approve') && (
           <CustomerStatusMenu status={row.accountStatus} positionClass="top-full mt-1" busy={busy} onChange={onStatus} />
         )}
       </div>
@@ -325,6 +328,7 @@ function CustomerCard({
 }
 
 function PendingCard({ row, onApprove }: { row: CustomerListItem; onApprove: () => void }) {
+  const can = useCan();
   return (
     <article className="min-w-0 rounded-lg border border-line bg-white p-4">
       <h3 className="break-all font-display text-[15px] font-bold text-navy">{row.businessName || '—'}</h3>
@@ -340,13 +344,13 @@ function PendingCard({ row, onApprove }: { row: CustomerListItem; onApprove: () 
         >
           View
         </Link>
-        <button
+        {can('customers.approve') && <button
           type="button"
           className="h-11 cursor-pointer rounded-[6px] bg-[#10b981] px-3 font-display text-[13px] font-bold text-white transition-colors hover:bg-[#0ea371]"
           onClick={onApprove}
         >
           Approve
-        </button>
+        </button>}
       </div>
     </article>
   );
@@ -365,6 +369,7 @@ function CustomerRow({
   busy: boolean;
   onStatus: (next: CustomerStatusAction['next']) => void;
 }) {
+  const can = useCan();
   return (
     <div className="flex items-center gap-3 border-t border-line px-4 py-3">
       <p className="min-w-0 flex-1 truncate font-display text-[14px] font-bold text-navy">{row.businessName || '—'}</p>
@@ -380,13 +385,13 @@ function CustomerRow({
         <Link to={routes.customer(row.id)} className={adminIconBtnClass()} aria-label={`View ${row.businessName}`}>
           <IconEye />
         </Link>
-        <Link to={routes.customerEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.businessName}`}>
+        {can('customers.edit') && <Link to={routes.customerEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.businessName}`}>
           <IconPencil />
-        </Link>
-        <button type="button" className={adminIconBtnClass()} aria-label="More actions" onClick={onToggleMenu}>
+        </Link>}
+        {can('customers.approve') && <button type="button" className={adminIconBtnClass()} aria-label="More actions" onClick={onToggleMenu}>
           <IconMore />
-        </button>
-        {menuOpen && (
+        </button>}
+        {menuOpen && can('customers.approve') && (
           <CustomerStatusMenu status={row.accountStatus} positionClass="top-10" busy={busy} onChange={onStatus} />
         )}
       </div>
@@ -395,6 +400,7 @@ function CustomerRow({
 }
 
 function PendingRow({ row, onApprove }: { row: CustomerListItem; onApprove: () => void }) {
+  const can = useCan();
   return (
     <div className="flex items-center gap-3 border-t border-line px-4 py-3">
       <p className="min-w-0 flex-1 truncate font-display text-[14px] font-bold text-navy">{row.businessName || '—'}</p>
@@ -409,13 +415,13 @@ function PendingRow({ row, onApprove }: { row: CustomerListItem; onApprove: () =
         >
           View Application
         </Link>
-        <button
+        {can('customers.approve') && <button
           type="button"
           className="cursor-pointer rounded-[6px] bg-[#10b981] px-3 py-2 font-display text-[13px] font-bold text-white transition-colors hover:bg-[#0ea371]"
           onClick={onApprove}
         >
           Approve
-        </button>
+        </button>}
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ const NOT_FOUND_TITLE = 'Page not found';
 
 export const adminPageTitle = (pathname: string, search = ''): string => {
   if (pathname === routes.root) return 'Dashboard';
+  if (pathname === routes.settings || pathname.startsWith(`${routes.settings}/`)) return 'Settings';
   const [section, id, action, ...rest] = pathname.split('/').filter(Boolean);
   const titles = section ? SECTION_TITLES[section] : undefined;
   if (!titles || rest.length) return NOT_FOUND_TITLE;
@@ -60,12 +61,14 @@ export const customerStatusHref = (status: AccountStatus | 'all') => {
   return `${routes.customers}?status=${status}`;
 };
 
+/** `permission`: the sidebar item shows only for roles that have it. */
 export const ADMIN_NAV_ITEMS = [
-  { to: routes.root, label: 'Dashboard', end: true },
-  { to: routes.customers, label: 'Customers', end: false },
-  { to: routes.products, label: 'Products', end: false },
-  { to: routes.orders, label: 'Orders', end: false },
-  { to: routes.coupons, label: 'Coupons', end: false },
+  { to: routes.root, label: 'Dashboard', end: true, permission: 'dashboard.view' },
+  { to: routes.customers, label: 'Customers', end: false, permission: 'customers.view' },
+  { to: routes.products, label: 'Products', end: false, permission: 'products.view' },
+  { to: routes.orders, label: 'Orders', end: false, permission: 'orders.view' },
+  { to: routes.coupons, label: 'Coupons', end: false, permission: 'coupons.view' },
+  { to: routes.settings, label: 'Settings', end: false, permission: 'settings.manage' },
 ] as const;
 
 export const dashboardKpis = (input: {

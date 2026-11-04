@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   ADMIN_ACCESS_DENIED,
+  can,
   canAccessAdmin,
   mapCurrentUser,
   RESET_LINK_INVALID,
@@ -19,6 +20,17 @@ describe('canAccessAdmin', () => {
     assert.equal(canAccessAdmin({}), false);
     assert.equal(canAccessAdmin(null), false);
     assert.equal(canAccessAdmin(undefined), false);
+  });
+});
+
+describe('can', () => {
+  it('passes when the role has any of the permissions', () => {
+    const user = { permissions: ['orders.view', 'dashboard.view'] };
+    assert.equal(can(user, 'orders.view'), true);
+    assert.equal(can(user, 'orders.edit', 'dashboard.view'), true);
+    assert.equal(can(user, 'settings.manage'), false);
+    assert.equal(can({}, 'orders.view'), false);
+    assert.equal(can(null, 'orders.view'), false);
   });
 });
 

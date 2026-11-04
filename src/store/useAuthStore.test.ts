@@ -10,6 +10,8 @@ const adminUser = {
   businessName: 'CAN-AM',
   businessType: '',
   role: 'admin' as const,
+  adminRoleName: 'Super Admin',
+  permissions: [],
 };
 
 describe('useAuthStore', () => {

@@ -17,9 +17,11 @@ import { applyListFilter, applyListPage, applyListSearch, parsePageParam, parseP
 import { scrollAdminContentToTop } from '../lib/pagination.ts';
 import { PRODUCT_STATUS_FILTERS } from '../lib/products.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 import type { Product } from '../types/api.ts';
 
 export default function ProductsPage() {
+  const can = useCan();
   const [params, setParams] = useSearchParams();
   const status = parseProductStatusFilter(params.get('status'));
   const page = parsePageParam(params.get('page'));
@@ -116,18 +118,18 @@ export default function ProductsPage() {
             {exporter.isPending ? null : <IconDownload />}
             <BusyLabel pending={exporter.isPending} pendingLabel="Exporting…" idle="Export CSV" />
           </button>
-          <Link
+          {can('products.edit') && <Link
             to={routes.categories}
             className="flex h-11 cursor-pointer items-center justify-center rounded-[6px] border border-line bg-white px-3 font-display text-[13px] font-bold text-navy transition-colors hover:border-navy hover:bg-navy hover:text-white"
           >
             Categories
-          </Link>
-          <Link
+          </Link>}
+          {can('products.create') && <Link
             to={routes.productNew}
             className="col-span-2 flex h-11 cursor-pointer items-center justify-center rounded-[6px] bg-canam-red px-3 font-display text-[13px] font-bold text-white transition-colors hover:bg-canam-red/90 sm:col-span-1"
           >
             + Add product
-          </Link>
+          </Link>}
         </div>
       </div>
 
@@ -210,13 +212,13 @@ export default function ProductsPage() {
               <Link to={routes.product(row.id)} className={adminCardActionClass('primary')}>
                 View
               </Link>
-              <Link to={routes.productEdit(row.id)} className={adminCardActionClass()}>
+              {can('products.edit') && <Link to={routes.productEdit(row.id)} className={adminCardActionClass()}>
                 Edit
-              </Link>
-              <Link to={routes.productDuplicate(row.id)} className={adminCardActionClass()}>
+              </Link>}
+              {can('products.create') && <Link to={routes.productDuplicate(row.id)} className={adminCardActionClass()}>
                 Duplicate
-              </Link>
-              <button
+              </Link>}
+              {can('products.delete') && <button
                 type="button"
                 className={adminCardActionClass('danger')}
                 disabled={deletingId === row.id}
@@ -227,7 +229,7 @@ export default function ProductsPage() {
                   pendingLabel="Deleting…"
                   idle="Delete"
                 />
-              </button>
+              </button>}
             </div>
           </article>
         ))}
@@ -263,17 +265,17 @@ export default function ProductsPage() {
                 <Link to={routes.product(row.id)} className={adminIconBtnClass()} aria-label={`View ${row.title}`}>
                   <IconEye />
                 </Link>
-                <Link to={routes.productEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.title}`}>
+                {can('products.edit') && <Link to={routes.productEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.title}`}>
                   <IconPencil />
-                </Link>
-                <Link
+                </Link>}
+                {can('products.create') && <Link
                   to={routes.productDuplicate(row.id)}
                   className={adminIconBtnClass()}
                   aria-label={`Duplicate ${row.title}`}
                 >
                   <IconCopy />
-                </Link>
-                <button
+                </Link>}
+                {can('products.delete') && <button
                   type="button"
                   className={adminIconBtnClass('danger')}
                   aria-label={`Delete ${row.title}`}
@@ -281,7 +283,7 @@ export default function ProductsPage() {
                   onClick={() => void onDelete(row)}
                 >
                   {deletingId === row.id ? <IconSpinner /> : <IconTrash />}
-                </button>
+                </button>}
               </div>
             </div>
           ))}

@@ -15,4 +15,7 @@ export const adminQueryKeys = {
   couponsRoot: ['admin', 'coupons'] as const,
   coupons: (params: ListParams) => ['admin', 'coupons', params] as const,
   coupon: (id: string | undefined) => ['admin', 'coupons', id] as const,
+  accessRoot: ['admin', 'access'] as const,
+  roles: ['admin', 'access', 'roles'] as const,
+  team: ['admin', 'access', 'team'] as const,
 };

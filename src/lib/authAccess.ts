@@ -6,6 +6,10 @@ export const ADMIN_ACCESS_DENIED = 'This account does not have admin access.';
 export const canAccessAdmin = (user: { role?: string } | null | undefined): boolean =>
   user?.role === 'admin';
 
+/** True when the admin's role grants at least one of the given permissions. */
+export const can = (user: { permissions?: string[] } | null | undefined, ...anyOf: string[]): boolean =>
+  anyOf.some((key) => user?.permissions?.includes(key));
+
 export const validateAdminLogin = (
   email: string,
   password: string,
@@ -61,6 +65,8 @@ export const mapCurrentUser = (payload: {
   businessName?: string;
   businessType?: string;
   role?: string;
+  adminRoleName?: string;
+  permissions?: string[];
 }): User => ({
   id: payload.id ?? payload._id ?? '',
   email: payload.email ?? '',
@@ -69,4 +75,6 @@ export const mapCurrentUser = (payload: {
   businessName: payload.businessName ?? '',
   businessType: payload.businessType ?? '',
   role: payload.role === 'admin' ? 'admin' : 'customer',
+  adminRoleName: payload.adminRoleName ?? '',
+  permissions: payload.permissions ?? [],
 });

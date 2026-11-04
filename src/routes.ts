@@ -18,6 +18,9 @@ export const routes = {
   couponNew: '/coupons/new',
   coupon: (id: string) => `/coupons/${id}`,
   couponEdit: (id: string) => `/coupons/${id}/edit`,
+  settings: '/settings',
+  roleNew: '/settings/roles/new',
+  roleEdit: (id: string) => `/settings/roles/${id}`,
 } as const;
 
 export const GUEST_PATHS = [routes.login, routes.resetPassword] as const;

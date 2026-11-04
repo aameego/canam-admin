@@ -13,10 +13,12 @@ import {
 } from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 
 type Tab = (typeof CUSTOMER_DETAIL_TABS)[number]['id'];
 
 export default function CustomerDetailPage() {
+  const can = useCan();
   const { id } = useParams();
   const navigate = useNavigate();
   const query = useCustomer(id);
@@ -88,13 +90,13 @@ export default function CustomerDetailPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
-            <Link
+            {can('customers.edit') && <Link
               to={routes.customerEdit(customer.id)}
               className="flex h-11 items-center justify-center rounded-[6px] border border-navy px-4 text-center font-display text-[13px] font-bold text-navy"
             >
               Edit Customer
-            </Link>
-            {customerStatusActions(customer.accountStatus).map((action) => (
+            </Link>}
+            {can('customers.approve') && customerStatusActions(customer.accountStatus).map((action) => (
               <button
                 key={action.next}
                 type="button"

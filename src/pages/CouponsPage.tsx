@@ -11,9 +11,11 @@ import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { applyListFilter, applyListPage, applyListSearch, parseCouponStatusFilter, parsePageParam } from '../lib/listQuery.ts';
 import { scrollAdminContentToTop } from '../lib/pagination.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 import type { Coupon } from '../types/api.ts';
 
 export default function CouponsPage() {
+  const can = useCan();
   const [params, setParams] = useSearchParams();
   const status = parseCouponStatusFilter(params.get('status'));
   const page = parsePageParam(params.get('page'));
@@ -61,12 +63,12 @@ export default function CouponsPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <Link
+        {can('coupons.create') && <Link
           to={routes.couponNew}
           className="flex h-11 cursor-pointer items-center justify-center rounded-[6px] bg-canam-red px-4 font-display text-[13px] font-bold text-white hover:bg-canam-red/90"
         >
           + Add coupon
-        </Link>
+        </Link>}
       </div>
 
       <div className="chip-scroller -mx-1 flex gap-2 overflow-x-auto px-1">
@@ -129,9 +131,9 @@ export default function CouponsPage() {
                   <Link to={routes.coupon(row.id)} className={adminIconBtnClass()} aria-label={`View ${row.code}`}>
                     <IconEye />
                   </Link>
-                  <Link to={routes.couponEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.code}`}>
+                  {can('coupons.edit') && <Link to={routes.couponEdit(row.id)} className={adminIconBtnClass()} aria-label={`Edit ${row.code}`}>
                     <IconPencil />
-                  </Link>
+                  </Link>}
                 </div>
               </div>
             ))}
@@ -154,6 +156,7 @@ export default function CouponsPage() {
 }
 
 function CouponCard({ row }: { row: Coupon }) {
+  const can = useCan();
   return (
     <article className="min-w-0 rounded-lg border border-line bg-white p-4">
       <div className="flex items-start justify-between gap-2">
@@ -167,9 +170,9 @@ function CouponCard({ row }: { row: Coupon }) {
         <Link to={routes.coupon(row.id)} className={adminCardActionClass('primary')}>
           View
         </Link>
-        <Link to={routes.couponEdit(row.id)} className={adminCardActionClass()}>
+        {can('coupons.edit') && <Link to={routes.couponEdit(row.id)} className={adminCardActionClass()}>
           Edit
-        </Link>
+        </Link>}
       </div>
     </article>
   );

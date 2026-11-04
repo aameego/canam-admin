@@ -8,8 +8,10 @@ import { couponTypeLabel, formatCouponValue } from '../lib/coupons.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { formatOrderDate } from '../lib/orders.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 
 export default function CouponDetailPage() {
+  const can = useCan();
   const { id } = useParams();
   const navigate = useNavigate();
   const query = useCoupon(id);
@@ -68,13 +70,13 @@ export default function CouponDetailPage() {
             <p className="mt-2 font-display text-[18px] font-extrabold text-navy">{formatCouponValue(coupon)}</p>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Link
+            {can('coupons.edit') && <Link
               to={routes.couponEdit(coupon.id)}
               className="flex h-11 items-center justify-center rounded-[6px] border border-navy px-4 font-display text-[13px] font-bold text-navy"
             >
               Edit coupon
-            </Link>
-            <button
+            </Link>}
+            {can(coupon.isActive ? 'coupons.delete' : 'coupons.edit') && <button
               type="button"
               className="h-11 rounded-[6px] border border-line px-4 font-display text-[13px] font-bold text-navy disabled:opacity-70"
               onClick={() => void onToggle()}
@@ -85,7 +87,7 @@ export default function CouponDetailPage() {
                 pendingLabel="Updating…"
                 idle={coupon.isActive ? 'Deactivate' : 'Activate'}
               />
-            </button>
+            </button>}
           </div>
         </div>
         <dl className="mt-6 grid gap-4 border-t border-line pt-6 sm:grid-cols-2 lg:grid-cols-3">

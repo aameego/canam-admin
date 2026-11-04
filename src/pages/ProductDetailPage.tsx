@@ -7,8 +7,10 @@ import { money } from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { validateProductStatusChange } from '../lib/products.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 
 export default function ProductDetailPage() {
+  const can = useCan();
   const { id } = useParams();
   const navigate = useNavigate();
   const query = useProduct(id);
@@ -91,19 +93,19 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Link
+            {can('products.edit') && <Link
               to={routes.productEdit(product.id)}
               className="flex h-11 items-center justify-center rounded-[6px] border border-navy px-4 font-display text-[13px] font-bold text-navy"
             >
               Edit product
-            </Link>
-            <Link
+            </Link>}
+            {can('products.create') && <Link
               to={routes.productDuplicate(product.id)}
               className="flex h-11 items-center justify-center rounded-[6px] border border-line px-4 font-display text-[13px] font-bold text-navy"
             >
               Duplicate
-            </Link>
-            {product.status !== 'active' ? (
+            </Link>}
+            {!can('products.edit') ? null : product.status !== 'active' ? (
               <button
                 type="button"
                 className="h-11 rounded-[6px] bg-navy px-4 font-display text-[13px] font-bold text-white disabled:opacity-70"
@@ -122,14 +124,14 @@ export default function ProductDetailPage() {
                 <BusyLabel pending={updateStatus.isPending} pendingLabel="Updating…" idle="Unpublish" />
               </button>
             )}
-            <button
+            {can('products.delete') && <button
               type="button"
               className="h-11 rounded-[6px] border border-canam-red px-4 font-display text-[13px] font-bold text-canam-red disabled:opacity-70"
               onClick={() => void onDelete()}
               disabled={busy}
             >
               <BusyLabel pending={remove.isPending} pendingLabel="Deleting…" idle="Delete" />
-            </button>
+            </button>}
           </div>
         </div>
         {product.description && (

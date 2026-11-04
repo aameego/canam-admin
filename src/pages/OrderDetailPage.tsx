@@ -7,9 +7,11 @@ import { money } from '../lib/customers.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 import { ORDER_NOTES_MAX, ORDER_STATUSES, formatOrderDate, isOrderDirty, orderTotals, validateOrderUpdate } from '../lib/orders.ts';
 import { routes } from '../routes.ts';
+import { useCan } from '../hooks/useAuth.ts';
 import type { OrderStatus } from '../types/api.ts';
 
 export default function OrderDetailPage() {
+  const can = useCan();
   const { id } = useParams();
   const navigate = useNavigate();
   const query = useOrder(id);
@@ -81,7 +83,7 @@ export default function OrderDetailPage() {
             </div>
             <p className="mt-2 font-display text-[18px] font-extrabold text-navy">{money(order.total)}</p>
           </div>
-          <div className="grid min-w-[240px] gap-2">
+          {can('orders.edit') && <div className="grid min-w-[240px] gap-2">
             <label className="grid gap-1">
               <span className="font-display text-[11px] font-bold uppercase text-muted">Status</span>
               <select
@@ -104,7 +106,7 @@ export default function OrderDetailPage() {
             >
               <BusyLabel pending={update.isPending} pendingLabel="Saving…" idle="Save changes" />
             </button>
-          </div>
+          </div>}
         </div>
 
         <dl className="mt-6 grid gap-4 border-t border-line pt-6 sm:grid-cols-2 lg:grid-cols-3">

@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout.tsx';
 import GuestRoute from './components/GuestRoute.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
+import RequirePermission from './components/RequirePermission.tsx';
 import { useCurrentAdmin } from './hooks/useAuth.ts';
 import CategoriesPage from './pages/CategoriesPage.tsx';
 import CouponDetailPage from './pages/CouponDetailPage.tsx';
@@ -20,6 +21,8 @@ import ProductDetailPage from './pages/ProductDetailPage.tsx';
 import ProductFormPage from './pages/ProductFormPage.tsx';
 import ProductsPage from './pages/ProductsPage.tsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.tsx';
+import RoleFormPage from './pages/RoleFormPage.tsx';
+import SettingsPage from './pages/SettingsPage.tsx';
 import { routes } from './routes.ts';
 
 const queryClient = new QueryClient({
@@ -42,22 +45,47 @@ function AppRoutes() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
-          <Route path={routes.root} element={<DashboardPage />} />
-          <Route path={routes.customers} element={<CustomersPage />} />
-          <Route path={routes.customerNew} element={<CustomerFormPage />} />
-          <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
-          <Route path="/customers/:id" element={<CustomerDetailPage />} />
-          <Route path={routes.products} element={<ProductsPage />} />
-          <Route path={routes.productNew} element={<ProductFormPage />} />
-          <Route path="/products/:id/edit" element={<ProductFormPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path={routes.categories} element={<CategoriesPage />} />
-          <Route path={routes.orders} element={<OrdersPage />} />
-          <Route path="/orders/:id" element={<OrderDetailPage />} />
-          <Route path={routes.coupons} element={<CouponsPage />} />
-          <Route path={routes.couponNew} element={<CouponFormPage />} />
-          <Route path="/coupons/:id/edit" element={<CouponFormPage />} />
-          <Route path="/coupons/:id" element={<CouponDetailPage />} />
+          <Route element={<RequirePermission anyOf={['dashboard.view']} />}>
+            <Route path={routes.root} element={<DashboardPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['customers.view']} />}>
+            <Route path={routes.customers} element={<CustomersPage />} />
+            <Route path="/customers/:id" element={<CustomerDetailPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['customers.edit']} />}>
+            <Route path={routes.customerNew} element={<CustomerFormPage />} />
+            <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['products.view']} />}>
+            <Route path={routes.products} element={<ProductsPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['products.create']} />}>
+            <Route path={routes.productNew} element={<ProductFormPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['products.edit']} />}>
+            <Route path="/products/:id/edit" element={<ProductFormPage />} />
+            <Route path={routes.categories} element={<CategoriesPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['orders.view']} />}>
+            <Route path={routes.orders} element={<OrdersPage />} />
+            <Route path="/orders/:id" element={<OrderDetailPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['coupons.view']} />}>
+            <Route path={routes.coupons} element={<CouponsPage />} />
+            <Route path="/coupons/:id" element={<CouponDetailPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['coupons.create']} />}>
+            <Route path={routes.couponNew} element={<CouponFormPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['coupons.edit']} />}>
+            <Route path="/coupons/:id/edit" element={<CouponFormPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={['settings.manage']} />}>
+            <Route path={routes.settings} element={<SettingsPage />} />
+            <Route path={routes.roleNew} element={<RoleFormPage />} />
+            <Route path="/settings/roles/:id" element={<RoleFormPage />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

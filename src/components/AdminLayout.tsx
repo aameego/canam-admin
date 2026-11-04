@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAdminLogout } from '../hooks/useAuth.ts';
+import { can } from '../lib/authAccess.ts';
 import {
   ADMIN_CONTENT_CLASS,
   ADMIN_DRAWER_CLASS,
@@ -20,6 +21,7 @@ import {
   IconFile,
   IconLogout,
   IconMenu,
+  IconSettings,
   IconTag,
   IconUsers,
   IconWallet,
@@ -33,6 +35,7 @@ const NAV_ICONS = {
   Coupons: IconWallet,
   Content: IconFile,
   Reports: IconChart,
+  Settings: IconSettings,
 } as const;
 
 export default function AdminLayout() {
@@ -106,9 +109,12 @@ export default function AdminLayout() {
             <h1 className="truncate font-display text-[18px] font-extrabold text-navy sm:text-[22px]">{title}</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <p className="hidden max-w-[160px] truncate font-display text-[13px] font-bold text-navy sm:block">
-              {user?.contactName || user?.email}
-            </p>
+            <div className="hidden max-w-[160px] text-right sm:block">
+              <p className="truncate font-display text-[13px] font-bold text-navy">{user?.contactName || user?.email}</p>
+              {user?.adminRoleName ? (
+                <p className="truncate font-body text-[11px] text-muted">{user.adminRoleName}</p>
+              ) : null}
+            </div>
             <span className="flex size-8 items-center justify-center rounded-full bg-canvas font-display text-[13px] font-extrabold text-navy">
               {(user?.contactName || user?.email || 'A').slice(0, 1).toUpperCase()}
             </span>
@@ -150,9 +156,10 @@ function BrandRow({
 }
 
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+  const user = useAuthStore((state) => state.user);
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-2">
-      {ADMIN_NAV_ITEMS.map((item) => {
+      {ADMIN_NAV_ITEMS.filter((item) => can(user, item.permission)).map((item) => {
         const Icon = NAV_ICONS[item.label];
         return (
           <NavLink
