@@ -6,7 +6,7 @@ import { DEV_ADMIN_LOGIN, isDevLoginPrefillEnabled } from '../lib/devLogin.ts';
 import { EMAIL_MAX } from '../lib/fields.ts';
 import { getErrorMessage } from '../lib/getErrorMessage.ts';
 
-type Panel = 'login' | 'forgot' | 'request-access';
+type Panel = 'login' | 'forgot';
 
 const fieldClass =
   'w-full rounded-[6px] border border-line bg-white px-3 py-2.5 font-body text-[14px] text-ink outline-none placeholder:text-muted/70 focus:border-navy';
@@ -141,20 +141,6 @@ export default function LoginPage() {
                 </p>
               )}
             </form>
-
-            <p className="mt-4 text-center font-body text-[13px] text-muted">
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                className="font-bold text-navy underline"
-                onClick={() => {
-                  resetAlerts();
-                  setPanel('request-access');
-                }}
-              >
-                Create New Account
-              </button>
-            </p>
           </>
         )}
 
@@ -210,25 +196,6 @@ export default function LoginPage() {
                 resetAlerts();
                 setPanel('login');
               }}
-            >
-              Back to Sign In
-            </button>
-          </>
-        )}
-
-        {panel === 'request-access' && (
-          <>
-            <header className="mb-6">
-              <h1 className="font-display text-[22px] font-extrabold text-navy">Create New Account</h1>
-              <p className="mt-1.5 font-body text-[14px] text-muted">
-                Admin accounts are issued by CAN-AM. Wholesale customer signup is on the storefront, not
-                here.
-              </p>
-            </header>
-            <button
-              type="button"
-              className="w-full rounded-[6px] bg-canam-red px-4 py-2.5 font-display text-[13px] font-bold text-white"
-              onClick={() => setPanel('login')}
             >
               Back to Sign In
             </button>
