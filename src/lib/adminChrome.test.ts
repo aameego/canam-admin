@@ -29,6 +29,7 @@ describe('adminPageTitle', () => {
     assert.equal(adminPageTitle('/customers/new'), 'Add customer');
     assert.equal(adminPageTitle('/customers/abc/edit'), 'Edit customer');
     assert.equal(adminPageTitle('/products'), 'Products');
+    assert.equal(adminPageTitle('/queries'), 'Queries');
     assert.equal(adminPageTitle('/products/new'), 'Add product');
     assert.equal(adminPageTitle('/products/abc'), 'Product details');
     assert.equal(adminPageTitle('/products/abc/edit'), 'Edit product');

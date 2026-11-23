@@ -20,7 +20,7 @@ describe('admin routes', () => {
   it('only lists sidebar destinations that are built', () => {
     assert.deepEqual(
       ADMIN_NAV_ITEMS.map((item) => item.label),
-      ['Dashboard', 'Customers', 'Products', 'Orders', 'Coupons', 'Settings'],
+      ['Dashboard', 'Customers', 'Products', 'Orders', 'Queries', 'Coupons', 'Settings'],
     );
     assert.equal(ADMIN_NAV_ITEMS[0]?.end, true);
     assert.equal(adminPageTitle('/orders'), 'Orders');

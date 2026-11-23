@@ -32,6 +32,7 @@ const NAV_ICONS = {
   Customers: IconUsers,
   Products: IconTag,
   Orders: IconBox,
+  Queries: IconFile,
   Coupons: IconWallet,
   Content: IconFile,
   Reports: IconChart,

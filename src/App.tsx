@@ -11,6 +11,7 @@ import CouponFormPage from './pages/CouponFormPage.tsx';
 import CouponsPage from './pages/CouponsPage.tsx';
 import OrderDetailPage from './pages/OrderDetailPage.tsx';
 import OrdersPage from './pages/OrdersPage.tsx';
+import QueriesPage from './pages/QueriesPage.tsx';
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx';
 import CustomerFormPage from './pages/CustomerFormPage.tsx';
 import CustomersPage from './pages/CustomersPage.tsx';
@@ -50,6 +51,7 @@ function AppRoutes() {
           </Route>
           <Route element={<RequirePermission anyOf={['customers.view']} />}>
             <Route path={routes.customers} element={<CustomersPage />} />
+            <Route path={routes.queries} element={<QueriesPage />} />
             <Route path="/customers/:id" element={<CustomerDetailPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={['customers.edit']} />}>

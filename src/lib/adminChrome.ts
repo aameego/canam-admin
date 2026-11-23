@@ -20,6 +20,7 @@ const SECTION_TITLES: Record<string, SectionTitles> = {
   products: { list: 'Products', detail: 'Product details', create: 'Add product', edit: 'Edit product' },
   categories: { list: 'Categories' },
   orders: { list: 'Orders', detail: 'Order details' },
+  queries: { list: 'Queries' },
   coupons: { list: 'Coupons', detail: 'Coupon details', create: 'Add coupon', edit: 'Edit coupon' },
 };
 
@@ -67,6 +68,7 @@ export const ADMIN_NAV_ITEMS = [
   { to: routes.customers, label: 'Customers', end: false, permission: 'customers.view' },
   { to: routes.products, label: 'Products', end: false, permission: 'products.view' },
   { to: routes.orders, label: 'Orders', end: false, permission: 'orders.view' },
+  { to: routes.queries, label: 'Queries', end: false, permission: 'customers.view' },
   { to: routes.coupons, label: 'Coupons', end: false, permission: 'coupons.view' },
   { to: routes.settings, label: 'Settings', end: false, permission: 'settings.manage' },
 ] as const;

@@ -14,6 +14,7 @@ export const routes = {
   categories: '/categories',
   orders: '/orders',
   order: (id: string) => `/orders/${id}`,
+  queries: '/queries',
   coupons: '/coupons',
   couponNew: '/coupons/new',
   coupon: (id: string) => `/coupons/${id}`,

@@ -12,6 +12,7 @@ export const adminQueryKeys = {
   ordersRoot: ['admin', 'orders'] as const,
   orders: (params: ListParams) => ['admin', 'orders', params] as const,
   order: (id: string | undefined) => ['admin', 'orders', id] as const,
+  queries: ['admin', 'queries'] as const,
   couponsRoot: ['admin', 'coupons'] as const,
   coupons: (params: ListParams) => ['admin', 'coupons', params] as const,
   coupon: (id: string | undefined) => ['admin', 'coupons', id] as const,
